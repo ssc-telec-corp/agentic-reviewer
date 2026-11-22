@@ -22,23 +22,31 @@ Turning on an org-wide required check affects every engineer at once. A noisy re
 
 ## Decision
 
-Option B. The wrapper input `comment-pr` (passed to upstream; `false` is shadow mode) and the org variable `ASR_FAIL_MODE` ([0007](0007-fail-open-vs-fail-closed.md)) are the controls. Each phase has an exit criterion:
+Option B. Three organization variables are the controls, so phases change without editing workflows:
+
+- `ASR_COMMENT_PR` (`true` or `false`) is passed to upstream's `comment-pr` input. `false` is shadow mode.
+- `ASR_FAIL_ON_SEVERITY` (`none` or `high`) controls whether HIGH findings block the merge ([0006](0006-required-check-semantics.md)).
+- `ASR_FAIL_MODE` (`open` or `closed`) controls whether the check fails when the review could not run ([0007](0007-fail-open-vs-fail-closed.md)).
+
+A repository variable with the same name overrides the organization variable, which is how a phase applies to the pilot repos only.
 
 | Phase | Scope | Settings | Exit criterion |
 |---|---|---|---|
 | 0. Baseline | Eval corpus only | n/a | Corpus contains at least [N] real cases; gate model meets `eval/thresholds.yaml` |
-| 1. Shadow | [pilot repos], ruleset in evaluate mode | `comment-pr: false`, `ASR_FAIL_MODE=open` | 2 weeks of findings labelled; precision at least 70% ([0009](0009-measuring-precision.md)) |
-| 2. Comments | [pilot repos], ruleset active | `comment-pr: true`, `ASR_FAIL_MODE=open` | 2 more weeks at least 70% precision from author feedback; no unresolved runbook incidents |
-| 3. Org-wide | All repos, ruleset active | `comment-pr: true`, `ASR_FAIL_MODE=open` | Failure rate of the check below [X]% of runs over 2 weeks; manual SIA retired |
-| 4. Fail closed | All repos | `ASR_FAIL_MODE=closed` | n/a (steady state) |
+| 1. Shadow | [pilot repos], ruleset in evaluate mode | comments off, blocking `none`, fail mode `open` | 2 weeks of findings labelled; precision at least 70% ([0009](0009-measuring-precision.md)) |
+| 2. Comments | [pilot repos], ruleset active | comments on, blocking `none`, fail mode `open` | 2 more weeks at least 70% precision from author feedback; precision of HIGH findings at least [X]% |
+| 3. Blocking on pilots | [pilot repos] | comments on, blocking `high`, fail mode `open` | 2 weeks with the bypass process running within [SLA]; every bypass recorded |
+| 4. Org-wide | All repos, ruleset active | comments on, blocking `high`, fail mode `open` | Failure rate of the check, excluding HIGH findings, below [Y]% of runs over 2 weeks; manual SIA retired |
+| 5. Fail closed | All repos | fail mode `closed` | n/a (steady state) |
 
-In shadow mode the wrapper writes findings to the job summary, upstream uploads its result artifact, and nothing is posted on the PR. The wrapper reads `comment-pr` from the org variable `ASR_COMMENT_PR`, so phases change without editing workflows. The manual SIA keeps running until the exit of phase 3.
+In shadow mode the wrapper writes findings to the job summary, upstream uploads its result artifact, and nothing is posted on the PR. The manual SIA keeps running until the exit of phase 4.
 
 ## Consequences
 
 - Phase 1 uses the ruleset's evaluate mode, so the check reports results without blocking. Whether evaluate mode is available for required workflows on our GitHub plan is Unknown, and has to be checked against the GitHub documentation for [GitHub plan].
-- Phases 1 to 3 run fail-open, and the code default (closed) applies only from phase 4.
+- Phases 1 to 4 run fail-open, and the code default (closed) applies only from phase 5.
+- HIGH findings block a merge only from phase 3, after phase 2 has measured how often they are right.
 
 ## Open questions
 
-- [decide: the pilot repos, N (minimum number of real corpus cases), and X (maximum check failure rate).]
+- [decide: the pilot repos, N (minimum number of real corpus cases), X (minimum HIGH precision before blocking), and Y (maximum check failure rate).]

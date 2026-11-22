@@ -1,49 +1,79 @@
-# 0006. The required check means "review completed", not "no findings"
+# 0006. HIGH findings block the merge; security team can bypass through a defined process
 
 - Status: Proposed
 - Date: 2026-11-22
 - Related: [0002](0002-composite-action-vs-custom-service.md), [0007](0007-fail-open-vs-fail-closed.md), [0009](0009-measuring-precision.md), [0010](0010-rollout-gates.md)
 
+**In short:** a PR cannot merge while the review reports a HIGH severity finding. MEDIUM and LOW findings are comments only. When a HIGH finding is wrong, the security team merges the PR through a ruleset bypass, following the process below. Blocking turns on only after the rollout has measured how often HIGH findings are right.
+
 ## Context
 
-An org ruleset makes the `adaptive-security-reviewer` workflow a required status check on every PR to protected branches. The manual SIA it replaces never blocked a merge on findings directly: the security team commented and the engineer responded. The reference design considered blocking merges on open findings and rejected it as too much friction. It tracked fix rate instead.
+An org ruleset makes the `adaptive-security-reviewer` workflow a required status check on every PR to protected branches. The question is what makes that check fail.
 
-A required check needs a result on every head commit. Upstream's default `run-every-commit: false` skips every run after the first on a PR. The skipped run still passes, so later commits would merge unreviewed.
+The upstream action rates each finding HIGH ("directly exploitable: RCE, data breach, authentication bypass"), MEDIUM ("requires specific conditions") or LOW, and instructs the model to report only HIGH and MEDIUM. The reference design (Figma) decided not to block merges on findings, because of the friction, and tracked fix rates instead. Here the requirement is the opposite: a change with a vulnerability that must be fixed must not merge.
+
+Two properties of the reviewer shape the design:
+- Every push gets a fresh review of the whole PR, with no memory of earlier runs. A fixed finding disappears on the next run and stops blocking. A wrong finding is usually raised again on every push, so it cannot be dismissed once and forgotten.
+- How often HIGH findings are wrong on real code is Unknown until the rollout measures it ([0009](0009-measuring-precision.md)).
+
+A required check needs a result on every head commit, so the wrapper sets `run-every-commit: true`.
 
 ## Considered options
 
-### Option A: Fail the check when there are findings
+### Option A: Findings never block; the check fails only when the review could not run
 
-- Pro: Findings cannot be ignored.
-- Con: Every false positive blocks a merge until someone with bypass rights steps in. At the 70% precision bar ([0009](0009-measuring-precision.md)), about 3 in 10 blocks would be wrong.
+- Pro: Lowest friction, and a wrong finding costs one reply.
+- Con: A known exploitable bug can merge.
 
-### Option B: Pass when the review completed; findings are comments
+### Option B: HIGH findings block; security team bypasses wrong ones
 
-- Pro: Engineers stay in control. The check still guarantees what the manual process did, that every change was assessed.
-- Con: An engineer can merge with an unaddressed finding. That has to be measured through fix rate.
+- Pro: Exploitable bugs cannot merge unless security decides they can.
+- Pro: The bypass uses the ruleset's built-in bypass list, so there is nothing to build. GitHub records each bypass.
+- Con: Every wrong HIGH finding needs a security engineer. The cost depends on precision, which is why blocking waits until precision is measured.
 
-### Option C: Option B, but fail on findings of severity HIGH
+### Option C: HIGH and MEDIUM findings block
 
-- Pro: Blocks the worst cases.
-- Con: Needs severity calibration that the POC does not measure.
+- Con: MEDIUM findings depend on conditions the reviewer often cannot check, so more PRs would be wrongly blocked.
+
+### Option D: Security team or author dismisses individual findings, and the wrapper remembers the dismissals
+
+- Pro: The check turns green without a bypass.
+- Con: It needs a way to recognize "the same finding" across runs even though the model rewords it each time. Verifying that the dismisser is on the security team needs a GitHub App token. If authors could dismiss, they could dismiss a real bug in their own PR.
 
 ## Decision
 
-Option B. The workflow runs on `opened`, `synchronize`, `reopened` and `ready_for_review`, with one concurrency group per PR so a new push cancels the previous run. The wrapper passes `run-every-commit: true`. The check:
+Option B.
 
-- passes when the upstream scan completed without error and the filter ran;
-- fails when the scan errored or the filter disabled itself, unless fail-open mode is set ([0007](0007-fail-open-vs-fail-closed.md));
-- fails for fork PRs ([0011](0011-fork-prs-and-untrusted-content.md)).
+- The wrapper input `fail-on-severity` takes `none` or `high`. The workflow passes `${{ vars.ASR_FAIL_ON_SEVERITY || 'none' }}`, so blocking is switched on org-wide by one organization variable, at the rollout phase where precision supports it ([0010](0010-rollout-gates.md)).
+- With `high`, the check fails when the completed review reports at least one HIGH finding. The job summary and the failure message list those findings and link to the bypass process.
+- The check also fails when the review could not run ([0007](0007-fail-open-vs-fail-closed.md)), and for fork PRs ([0011](0011-fork-prs-and-untrusted-content.md)).
+- The required check sits in its own ruleset, whose only bypass actor is [security-team]. A bypass then skips only this check, not other branch protections such as required approvals.
 
-The upstream comment script posts inline comments only if no earlier bot security comment exists on the PR. To keep findings from later pushes visible, the wrapper writes all kept findings to the job summary on every run.
+## Bypass process
+
+When the author believes a HIGH finding is wrong:
+
+1. **The author replies to the finding's comment** with why it is wrong, and asks for a security review in [channel] or by requesting review from [security-team]. Nothing else changes for the engineer.
+2. **Security on-call decides within [SLA].** If the finding is real, the author fixes it, and the next push re-runs the review. If the finding is wrong, on-call merges the PR through the ruleset bypass.
+3. **On-call records the decision** in a PR comment with a fixed form: `ASR bypass: <finding title> | reason: <why it is wrong> | follow-up: <link to policy PR or eval case, or none>`.
+4. **Every bypass is a labelled false positive.** It counts against precision ([0009](0009-measuring-precision.md)). When the same kind of mistake repeats, on-call opens a policy PR with a new precedent, so the reviewer stops raising it.
+5. **[security-lead] reviews all bypasses every [period]**, using GitHub's ruleset insights or the org audit log, and checks that each has a recorded reason.
+
+The same path covers an emergency, for example a hotfix during an incident that the reviewer blocks. In that case the reason records the incident.
 
 ## Consequences
 
-- The PR conversation can lag behind the job summary after the first push. The [engineer FAQ](../engineer-faq.md) explains where to look.
-- Each push is a full review, at the per-review cost shown in the eval report.
+- Engineers whose PR is wrongly blocked wait for security on-call. The [SLA] and the on-call load are set by HIGH precision, which phase 2 of the rollout measures before blocking turns on.
+- Since a fixed finding stops blocking on the next push, "fixed" means "the reviewer no longer reports it". A fix that only rewords the code so the model stops noticing would also pass. Human code review remains the control for that.
+- The check is red on every bypassed PR, so "red check, merged" is the signal the periodic review looks for.
+
+## Open questions
+
+- [decide: the [SLA] for on-call decisions, and the [channel] engineers use to ask.]
+- [decide: whether GitHub's delegated bypass (an author requests a bypass and a security team member approves it in the GitHub UI) is available for branch rulesets on [GitHub plan]. If it is, step 2 can use it instead of on-call merging the PR themselves. Unknown.]
+- [decide: the HIGH precision required before setting `ASR_FAIL_ON_SEVERITY=high`. The starting proposal is [X]%, measured in phase 2 ([0010](0010-rollout-gates.md)).]
 
 ## Future opportunities
 
-- An input `fail-on-severity: high` (Option C), once the measured precision of HIGH findings supports it.
-- Fingerprint-based posting of new findings on later pushes, either as a wrapper step or as an upstream contribution.
-- Fix-rate tracking ([0009](0009-measuring-precision.md)).
+- **Option D for security engineers only**, if the bypass volume becomes a burden: stable finding fingerprints plus a dismissal command, checked against [security-team] membership.
+- **Post only new findings on later pushes**, so the PR conversation matches what blocks it. Today, the upstream comment script posts nothing if the bot has commented before, so the job summary is the current list.
