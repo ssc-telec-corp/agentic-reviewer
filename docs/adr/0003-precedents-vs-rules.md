@@ -34,13 +34,13 @@ Precedents describe architecture and recurring decisions, not individual eval ca
 
 Our precedents add to upstream's defaults and never repeat or contradict them, because upstream's defaults come first and win ([0011](0011-policy-layering.md)). Before a precedent is added, its author checks it against upstream's default text. For now no precedents are loaded, and the review runs on upstream's defaults alone ([0011](0011-policy-layering.md)).
 
-The upstream regex exclusions stay active. Turning them off would require a fork ([0001](0001-reviewer-core.md)).
+Whether the upstream regex exclusions stay depends on the reviewer core ([0001](0001-reviewer-core.md)). With Option C, the copied code keeps them until the eval shows whether they cost real findings, and they can then be narrowed or removed. With Option D, there are none: the slash command used as its starting point has no regex step, and states its exclusions as text instead.
 
 ## Consequences
 
-- A real finding whose text happens to match an exclusion regex is dropped before the policy is consulted. Such drops appear in `excluded_findings_details` with `filter_stage: hard_rules`. The eval reports them as their own miss category, so their effect is measured.
+- While regex exclusions are in use, a real finding whose text happens to match one is dropped before the policy is consulted. Such drops appear in `excluded_findings_details` with `filter_stage: hard_rules`. The eval reports them as their own miss category, so their effect is measured.
 
 ## Future opportunities
 
-- If the eval shows real misses with `filter_stage: hard_rules`, propose an upstream input that disables or narrows the hard exclusions.
+- If the eval shows real misses with `filter_stage: hard_rules`, narrow or remove the regex exclusions in our copy of the code (Option C).
 - Feed author feedback from disputed findings ([0008](0008-measuring-precision.md)) into new precedents, with a security-team review of each one.
