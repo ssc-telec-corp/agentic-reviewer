@@ -61,6 +61,16 @@ When the author believes a HIGH finding is wrong:
 
 The same path covers an emergency, for example a hotfix during an incident that the reviewer blocks. In that case the reason records the incident.
 
+## Known gaps in PR comments
+
+The upstream comment script, as observed in a test run ([0001](0001-composite-action-vs-custom-service.md)), behaves like this after the first review of a PR:
+
+- **Fixed findings are not closed.** Comments from earlier reviews stay on the PR. The reviewer has no memory of them, so it does not reply that a finding is fixed or resolve the thread. GitHub marks a comment "Outdated" only when the exact line it points at changes, so a fixed finding can still look current.
+- **A clean re-review is silent.** Nothing on the PR says that a later review found nothing. The only record is the results artifact and the job summary.
+- **New findings on later pushes are not posted.** The comment script posts nothing if the bot has already commented on the PR. With `fail-on-severity: high`, a HIGH finding introduced in a later push would fail the check without appearing anywhere in the PR conversation, only in the job summary. Blocking should not be turned on ([0009](0009-rollout-gates.md), phase 3) until this is fixed.
+
+All three need a change to the comment script, which depends on [0001](0001-composite-action-vs-custom-service.md).
+
 ## Consequences
 
 - Engineers whose PR is wrongly blocked wait for security on-call. The [SLA] and the on-call load are set by HIGH precision, which phase 2 of the rollout measures before blocking turns on.
@@ -74,7 +84,6 @@ The same path covers an emergency, for example a hotfix during an incident that 
 - [decide: what happens on `merge_group` events. Upstream writes no results file for any event other than `pull_request`, so under fail-closed the merge queue would always fail.]
 - [decide: what happens with PRs too large to review. Upstream reviews only the first 100 changed files, and a very large diff may fail to download.]
 - [decide: whether a bypass record gets a type (`false-positive`, `emergency` or `unreviewable`), so that only real false positives count against precision ([0008](0008-measuring-precision.md)).]
-
 - [decide: the [SLA] for on-call decisions, and the [channel] engineers use to ask.]
 - [decide: whether GitHub's delegated bypass (an author requests a bypass and a security team member approves it in the GitHub UI) is available for branch rulesets on [GitHub plan]. If it is, step 2 can use it instead of on-call merging the PR themselves. Unknown.]
 - [decide: the HIGH precision required before setting `ASR_FAIL_ON_SEVERITY=high`. The starting proposal is [X]%, measured in phase 2 ([0009](0009-rollout-gates.md)).]
@@ -82,4 +91,9 @@ The same path covers an emergency, for example a hotfix during an incident that 
 ## Future opportunities
 
 - **Option D for security engineers only**, if the bypass volume becomes a burden: stable finding fingerprints plus a dismissal command, checked against [security-team] membership.
-- **Post only new findings on later pushes**, so the PR conversation matches what blocks it. Today, the upstream comment script posts nothing if the bot has commented before, so the job summary is the current list.
+- **Comments that track the review across pushes**, closing the gaps above. Each finding gets a fingerprint. On every run the posting step:
+  - posts only findings that are not already on the PR;
+  - replies "no longer reported in `<sha>`" to findings that disappeared, and resolves their threads;
+  - keeps one summary comment up to date, listing the current findings, or saying the latest review found none, and linking to the bypass process when a HIGH finding blocks the merge.
+
+  This is a prerequisite for blocking on HIGH findings.
