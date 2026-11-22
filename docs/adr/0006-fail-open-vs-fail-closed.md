@@ -1,7 +1,7 @@
 # 0006. Fail closed by default, with an org variable for break-glass fail-open
 
 - Status: Proposed
-- Date: 2026-11-22
+- Date: 2026-11-23
 - Related: [0001](0001-composite-action-vs-custom-service.md), [0004](0004-models-and-second-reviewer.md), [0005](0005-required-check-semantics.md), [0009](0009-rollout-gates.md)
 
 ## Context

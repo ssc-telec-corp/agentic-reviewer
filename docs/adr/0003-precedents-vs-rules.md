@@ -1,7 +1,7 @@
 # 0003. Write the policy as precedents with reasons, not as rules
 
 - Status: Proposed
-- Date: 2026-11-22
+- Date: 2026-11-23
 - Related: [0001](0001-composite-action-vs-custom-service.md), [0002](0002-classifier-vs-single-policy.md), [0007](0007-eval-corpus-and-judge.md), [0008](0008-measuring-precision.md), [0011](0011-policy-layering.md)
 
 ## Context

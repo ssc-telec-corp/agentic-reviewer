@@ -1,7 +1,7 @@
 # 0009. Phased rollout with measured exit criteria
 
 - Status: Proposed
-- Date: 2026-11-22
+- Date: 2026-11-23
 - Related: [0005](0005-required-check-semantics.md), [0006](0006-fail-open-vs-fail-closed.md), [0008](0008-measuring-precision.md), [0012](0012-versioned-releases.md)
 
 ## Context

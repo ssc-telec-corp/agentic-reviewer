@@ -1,7 +1,7 @@
 # 0008. Measure precision from author feedback in production and from clean cases in the eval
 
 - Status: Proposed
-- Date: 2026-11-22
+- Date: 2026-11-23
 - Related: [0001](0001-composite-action-vs-custom-service.md), [0003](0003-precedents-vs-rules.md), [0005](0005-required-check-semantics.md), [0007](0007-eval-corpus-and-judge.md), [0009](0009-rollout-gates.md)
 
 ## Context

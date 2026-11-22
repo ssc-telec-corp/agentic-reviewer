@@ -1,7 +1,7 @@
 # 0001. Reviewer core: copy or rebuild `claude-code-security-review` (open)
 
 - Status: Proposed, decision open between Options C and D
-- Date: 2026-11-22
+- Date: 2026-11-23
 - Related: [0002](0002-classifier-vs-single-policy.md), [0003](0003-precedents-vs-rules.md), [0004](0004-models-and-second-reviewer.md), [0005](0005-required-check-semantics.md), [0006](0006-fail-open-vs-fail-closed.md), [0007](0007-eval-corpus-and-judge.md), [0008](0008-measuring-precision.md), [0010](0010-local-vs-ci-authentication.md), [0011](0011-policy-layering.md), [0012](0012-versioned-releases.md)
 
 **In short:** the reviewer core, meaning the code that turns a PR into findings, must be changed from Anthropic's `claude-code-security-review` action, because the action cannot meet the requirements below unchanged, and it shows no sign of maintenance. Using it unchanged (Option A) and a public GitHub fork (Option B) are ruled out. The open choice is between copying it into our repository and changing it (Option C) or building our own reviewer on headless Claude Code (Option D). Everything else in this design (policy, eval, workflows, releases, rollout) is the same whichever is chosen.

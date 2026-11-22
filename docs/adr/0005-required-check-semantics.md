@@ -1,7 +1,7 @@
 # 0005. HIGH findings block the merge; security team can bypass through a defined process
 
 - Status: Proposed
-- Date: 2026-11-22
+- Date: 2026-11-23
 - Related: [0001](0001-composite-action-vs-custom-service.md), [0006](0006-fail-open-vs-fail-closed.md), [0008](0008-measuring-precision.md), [0009](0009-rollout-gates.md), [0011](0011-policy-layering.md)
 
 **In short:** a PR cannot merge while the review reports a HIGH severity finding. MEDIUM and LOW findings are comments only. When a HIGH finding is wrong, the security team merges the PR through a ruleset bypass, following the process below. Blocking turns on only after the rollout has measured how often HIGH findings are right.

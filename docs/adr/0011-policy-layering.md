@@ -1,7 +1,7 @@
 # 0011. Policy: upstream defaults only for now; org precedents and repo overlays planned
 
 - Status: Proposed
-- Date: 2026-11-22
+- Date: 2026-11-23
 - Related: [0001](0001-composite-action-vs-custom-service.md), [0002](0002-classifier-vs-single-policy.md), [0003](0003-precedents-vs-rules.md), [0005](0005-required-check-semantics.md), [0007](0007-eval-corpus-and-judge.md), [0012](0012-versioned-releases.md)
 
 **In short:** for now, the review uses only the default rules that ship with `claude-code-security-review`, plus the list of SIA criteria. Org precedents exist as switched-off drafts in `policy/base/`. Repository overlays, kept in this repository and owned by [security-team], are designed below but not built. Both get filled in after the project moves to [org].

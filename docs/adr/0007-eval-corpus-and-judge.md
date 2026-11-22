@@ -1,7 +1,7 @@
 # 0007. Eval corpus of labelled commits, run through the upstream pipeline, judged by an LLM
 
 - Status: Proposed
-- Date: 2026-11-22
+- Date: 2026-11-23
 - Related: [0001](0001-composite-action-vs-custom-service.md), [0003](0003-precedents-vs-rules.md), [0004](0004-models-and-second-reviewer.md), [0008](0008-measuring-precision.md), [0010](0010-local-vs-ci-authentication.md), [0011](0011-policy-layering.md), [0012](0012-versioned-releases.md)
 
 ## Context

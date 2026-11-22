@@ -1,7 +1,7 @@
 # 0012. Numbered GitHub Releases for the action, gated on the eval
 
 - Status: Proposed
-- Date: 2026-11-22
+- Date: 2026-11-23
 - Related: [0001](0001-composite-action-vs-custom-service.md), [0004](0004-models-and-second-reviewer.md), [0007](0007-eval-corpus-and-judge.md), [0009](0009-rollout-gates.md), [0011](0011-policy-layering.md)
 
 ## Context
