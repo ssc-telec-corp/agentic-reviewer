@@ -1,4 +1,4 @@
-# 0007. Eval corpus of labelled commits, run through the upstream pipeline, judged by an LLM
+# 0007. Eval corpus of labelled commits, run through the reviewer core, judged by an LLM
 
 - Status: Proposed
 - Date: 2026-11-23

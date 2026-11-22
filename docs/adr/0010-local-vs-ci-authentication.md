@@ -1,4 +1,4 @@
-# 0010. Authentication: API key in every mode
+# 0010. Authentication: API key now, workload identity federation for production
 
 - Status: Proposed
 - Date: 2026-11-23
