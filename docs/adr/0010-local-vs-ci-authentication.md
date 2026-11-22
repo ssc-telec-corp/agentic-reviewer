@@ -18,6 +18,7 @@ Assumptions to verify:
 
 - **A1 (checked, false).** `claude-3-5-haiku-20241022` was retired on 2026-02-19, so the upstream filter never runs ([0001](0001-composite-action-vs-custom-service.md), problem 1).
 - **A2 (checked, true).** When `ANTHROPIC_API_KEY` is set, Claude Code uses it as an API key, even if `CLAUDE_CODE_OAUTH_TOKEN` is also set. In a test run on 2026-11-22, a `claude setup-token` subscription token was put in both. Claude Code sent it as an API key and got `401 Invalid API key`. The unmodified upstream action therefore cannot run on a Claude subscription in any configuration, because it refuses to start without `ANTHROPIC_API_KEY`.
+- **OpenRouter (checked, works for the scan).** A test run on 2026-11-22 routed the unmodified action through OpenRouter, with `ANTHROPIC_BASE_URL=https://openrouter.ai/api` at job level, the OpenRouter key in `claude-api-key`, and `claude-model: anthropic/claude-sonnet-5.5`. OpenRouter accepted the key in `x-api-key`, which its documentation does not state, and the scan completed. The filter stayed off, because OpenRouter no longer serves the retired Haiku model either. OpenRouter is a third-party gateway, so it is a POC workaround only. Production uses the Anthropic API directly.
 - **A3.** Claude Code (`claude -p`) accepts the WIF variables. The SDK and `ant` CLI documentation says they do the exchange. Whether Claude Code does is Unknown, and needs checking before WIF is used for the scan step.
 
 ## Considered options
