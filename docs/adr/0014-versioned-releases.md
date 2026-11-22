@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0002](0002-composite-action-vs-custom-service.md), [0008](0008-eval-corpus-and-judge.md), [0010](0010-rollout-gates.md), [0013](0013-policy-layering.md)
+- Related: [0002](0002-composite-action-vs-custom-service.md), [0005](0005-models-and-second-reviewer.md), [0008](0008-eval-corpus-and-judge.md), [0010](0010-rollout-gates.md), [0013](0013-policy-layering.md)
 
 ## Context
 

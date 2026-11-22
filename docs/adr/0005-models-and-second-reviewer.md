@@ -1,43 +1,55 @@
-# 0005. Models: one Anthropic model per run; second reviewer and adjudication are future options
+# 0005. One reviewer model, Claude Opus 5.5; a second model is measured before it is used
 
 - Status: Proposed
 - Date: 2026-11-22
 - Related: [0002](0002-composite-action-vs-custom-service.md), [0007](0007-fail-open-vs-fail-closed.md), [0008](0008-eval-corpus-and-judge.md)
 
+**In short:** every PR is reviewed by one model, `claude-opus-5-5`. We do not add a second reviewer model yet. Instead, the eval runs every test case on both Opus and Sonnet, and the results decide whether a second reviewer is worth its cost.
+
 ## Context
 
-The reference design runs two reviewers from different vendors on every PR and posts the union, because different models miss different bugs. It also adds an adjudicator that re-examines the candidates the reviewer dropped. Our company uses only Anthropic models.
+The reference design (Figma's) has every PR reviewed by two AI products from different vendors, Claude and OpenAI's Codex, and posts what either one finds. The reason is that different models miss different bugs, so two reviewers together catch more than either one alone.
 
-In the upstream action, a single input, `claude-model`, sets the model for both the Claude Code find stage and the Messages API filter. Its default is `claude-opus-4-1-20250805`. There is no fallback model and no adjudication.
+Our company uses only Anthropic models, so a second vendor is not an option. The closest substitute is a second Anthropic model: Sonnet instead of Opus, which is smaller, cheaper and differently tuned. Whether Sonnet catches bugs that Opus misses on our code is Unknown.
+
+The `claude-code-security-review` action has one setting for this, `claude-model`. It sets the model for both of the action's steps: the step that finds possible vulnerabilities, and the step that filters out false ones. Its default is the outdated `claude-opus-4-1-20250805`.
 
 ## Considered options
 
-### Option A: One model for find and filter, set through `claude-model`
+### Option A: One model, Opus 5.5
 
-- Pro: Supported by the upstream action as it is.
-- Con: Find and filter share the same model's blind spots.
+- Pro: The action supports it as it is; it is one setting.
+- Pro: Opus is the strongest Anthropic model for the job, so it has the best chance of finding real bugs.
+- Con: Every bug that Opus misses is missed. There is no second opinion.
 
-### Option B: Run the upstream action twice per PR with different models (Opus and Sonnet)
+### Option B: Two models, run the action twice per PR (Opus and Sonnet) and post what either finds
 
-- Pro: Some model diversity without a fork.
-- Con: Twice the cost. The two runs post separately, and the upstream duplicate check would suppress the second run's inline comments.
+- Pro: The closest we can get to the two-vendor setup.
+- Con: Each PR costs about twice as much.
+- Con: Wrong findings from both models get posted, so engineers see more noise.
+- Con: The action posts no inline comments if the PR already has any from the bot, so the second run's findings would appear only in the job summary.
 
-### Option C: Add an adjudication step after the upstream action over `excluded_findings_details`
+### Option C: Sonnet only
 
-- Pro: Recovers true findings that the filter talked itself out of. The reference design reports about a 30% relative recall gain from adjudication on known-bad commits.
-- Con: Needs a model call outside the upstream action, which means code we own.
+- Pro: Cheapest.
+- Con: Likely to miss more than Opus, though by how much is Unknown until the eval measures it.
 
 ## Decision
 
-Option A, with `claude-model: claude-opus-5-5`. The eval harness runs every corpus case on both `claude-opus-5-5` and `claude-sonnet-5-5`. It reports each model's recall and false positives, and the recall of their union. Those numbers are what Options B and C need before anyone builds them.
+Option A. The wrapper sets `claude-model: claude-opus-5-5`.
+
+To decide on Option B with data instead of opinion, the eval runs every test case on both `claude-opus-5-5` and `claude-sonnet-5-5`. For each model, it reports how many known vulnerabilities the model found and how many false findings it raised on known-clean changes. It also reports how many vulnerabilities at least one of the two found.
 
 ## Consequences
 
-- There is no automatic fallback model. When Opus is unavailable, the scan errors and the fail-mode rule in [0007](0007-fail-open-vs-fail-closed.md) applies.
-- Changing `claude-model` requires an eval run ([0008](0008-eval-corpus-and-judge.md)).
+- If Opus is unavailable, the review fails, and the outage rules in [0007](0007-fail-open-vs-fail-closed.md) decide whether the check blocks the merge. There is no automatic switch to another model.
+- Changing the model is a behaviour change: it needs an eval run and a new minor release ([0014](0014-versioned-releases.md)).
+
+## Open questions
+
+- [decide: adopt Option B if the two models together find at least [X] more of the known vulnerabilities than Opus alone, while false findings on clean changes stay within the threshold in `eval/thresholds.yaml`. The synthetic test set is too small to decide this, so it needs real cases ([0008](0008-eval-corpus-and-judge.md)).]
 
 ## Future opportunities
 
-- **Adjudication (Option C).** Build it first if the eval shows misses classified as "dropped by filter".
-- **Second reviewer (Option B).** Adopt it if union recall beats Opus recall by at least [X] cases while union false positives stay within the threshold. A 37-case synthetic corpus is too small to decide this, so it needs real cases.
-- **Fallback model.** Retry the upstream step with `claude-sonnet-5-5` when the first attempt errors. This is a wrapper step, not a fork.
+- **Second check of discarded findings ("adjudicator").** The action's filter discards some possible vulnerabilities, and lists them in its output under `excluded_findings_details`. A wrapper step after the action could ask the model to look at those again. Figma reports that this raised the share of known bugs found by about 30% (relative). Build it if the eval shows misses where the right finding was found and then discarded.
+- **Fallback model during outages.** When the Opus run errors, the wrapper could retry the action once with Sonnet instead of failing the check. Then the run's quality is Sonnet's eval number, which the job summary would state.
