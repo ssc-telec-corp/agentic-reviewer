@@ -33,13 +33,13 @@ The upstream action takes the instructions as two text files per run, `custom-se
 Option C.
 
 - `policy/base/` in the reviewer repo holds the org policy: global precedents, plus one file per SIA criterion with the criterion's id, name, what it covers, and its precedents. It is stack-agnostic, owned by [security-team], and changed only through PRs that include an eval run.
-- `.github/sia-policy.yaml` in a target repository is optional. It may contain `system` (a few lines describing the service), `trust_boundaries`, and `precedents`, each tagged with a criterion id. It cannot remove or override base precedents. Overlay precedents are rendered after the base ones, under the heading "Repository-specific".
-- The wrapper reads the overlay with `git show <base-sha>:.github/sia-policy.yaml`. A missing file means no overlay.
+- `.github/adaptive-security-reviewer.yaml` in a target repository is optional. It may contain `system` (a few lines describing the service), `trust_boundaries`, and `precedents`, each tagged with a criterion id. It cannot remove or override base precedents. Overlay precedents are rendered after the base ones, under the heading "Repository-specific".
+- The wrapper reads the overlay with `git show <base-sha>:.github/adaptive-security-reviewer.yaml`. A missing file means no overlay.
 - Rendering:
   - **Scan instructions:** the criteria list with the instruction to set `category` to the criterion id, then the system description and trust boundaries, then all precedents.
   - **Filtering instructions:** upstream's default filtering text, then the same precedents.
 - The upstream default text is stored in `policy/base/upstream-filter-defaults.txt`. A test compares it with the text produced by upstream's `_generate_single_finding_prompt` at the pinned SHA, and fails after an upstream bump until the copy is updated.
-- `python -m sia_policy validate` checks both layers, and runs in CI for the reviewer repo and for any repo that has an overlay.
+- `python -m adaptive_security_reviewer validate-policy` checks both layers, and runs in CI for the reviewer repo and for any repo that has an overlay.
 
 ## Consequences
 

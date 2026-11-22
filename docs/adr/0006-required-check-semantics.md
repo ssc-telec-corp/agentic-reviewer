@@ -6,7 +6,7 @@
 
 ## Context
 
-An org ruleset makes the `sia-review` workflow a required status check on every PR to protected branches. The manual SIA it replaces never blocked a merge on findings directly: the security team commented and the engineer responded. The reference design considered blocking merges on open findings and rejected it as too much friction. It tracked fix rate instead.
+An org ruleset makes the `adaptive-security-reviewer` workflow a required status check on every PR to protected branches. The manual SIA it replaces never blocked a merge on findings directly: the security team commented and the engineer responded. The reference design considered blocking merges on open findings and rejected it as too much friction. It tracked fix rate instead.
 
 A required check needs a result on every head commit. Upstream's default `run-every-commit: false` skips every run after the first on a PR. The skipped run still passes, so later commits would merge unreviewed.
 

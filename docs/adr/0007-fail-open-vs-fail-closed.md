@@ -35,15 +35,15 @@ Option C. After the upstream step, the wrapper's verify step classifies the run:
 - **unfiltered**: `claudecode-error.log` contains `Claude API validation failed` or `Failed to initialize Claude client`.
 - **completed**: neither of the above.
 
-The workflow passes `fail-mode: ${{ vars.SIA_FAIL_MODE || 'closed' }}`. With `closed`, both error and unfiltered fail the check. With `open`, they pass with a warning annotation, and the job summary says "SIA review skipped: <reason>". `SIA_FAIL_MODE` is an organization variable, so changing it needs org admin rights and is recorded in the org audit log.
+The workflow passes `fail-mode: ${{ vars.ASR_FAIL_MODE || 'closed' }}`. With `closed`, both error and unfiltered fail the check. With `open`, they pass with a warning annotation, and the job summary says "SIA review skipped: <reason>". `ASR_FAIL_MODE` is an organization variable, so changing it needs org admin rights and is recorded in the org audit log.
 
 ## Consequences
 
-- During an outage, on-call sets `SIA_FAIL_MODE=open`. Afterwards they set it back and re-run the skipped checks. The [runbook](../runbook.md) has the commands.
+- During an outage, on-call sets `ASR_FAIL_MODE=open`. Afterwards they set it back and re-run the skipped checks. The [runbook](../runbook.md) has the commands.
 - The verify step depends on upstream's file names and log strings. Bumping the upstream SHA must include a test run that exercises the error path.
 
 ## Future opportunities
 
 - Retry with a fallback model before declaring an error ([0005](0005-models-and-second-reviewer.md)).
-- Automatic revert of `SIA_FAIL_MODE` after [N] hours.
+- Automatic revert of `ASR_FAIL_MODE` after [N] hours.
 - [decide: who besides security on-call may flip the variable.]
