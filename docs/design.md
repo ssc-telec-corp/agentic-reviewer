@@ -15,7 +15,7 @@ What the system has to achieve, independent of how. The mechanisms are under "Ho
 - **R3.** The review supplements the human code review every PR already gets. It does not replace it.
 - **R4.** The reviewer speaks only when it has something to say. A PR without findings gets no comment.
 - **R5.** What the PR shows is current. A finding introduced by a later push appears, and a finding that was fixed is marked resolved.
-- **R6.** A change with a confirmed serious vulnerability does not merge. A wrong finding cannot block work indefinitely.
+- **R6.** A change with a confirmed serious vulnerability does not merge. No finding blocks a PR for longer than [N] working hours: if the Adaptive Security team has not decided by then, the PR is unblocked and the finding is reviewed after the merge.
 - **R7.** A review that did not happen is never mistaken for a clean review.
 - **R8.** No long-lived model credential exists that could leak.
 - **R9.** Code under review cannot change how it is reviewed, or reach the reviewer's credentials.
@@ -72,7 +72,7 @@ The reviewer core is the only component that calls a model. The PR integration a
 | R3 Supplements human review | Existing review requirements stay unchanged. The reviewer does not request reviewers | [0002](adr/0002-classifier-vs-single-policy.md) |
 | R4 Speaks only with findings | Comments are posted only for findings. The SIA criteria go to the job summary | [0002](adr/0002-classifier-vs-single-policy.md), [0005](adr/0005-required-check-semantics.md) |
 | R5 PR shows the current state | The comment sync step posts new findings and resolves fixed ones | [0005](adr/0005-required-check-semantics.md) |
-| R6 Serious vulnerabilities do not merge | HIGH findings fail the required check. The Adaptive Security team can bypass the check through a recorded process | [0005](adr/0005-required-check-semantics.md) |
+| R6 Serious vulnerabilities do not merge, and blocks are short | HIGH findings fail the required check. A false-positive request, or a bypass by the Adaptive Security team, ends the block. The time limit is not designed yet (see "Components still to design") | [0005](adr/0005-required-check-semantics.md) |
 | R7 No silent failure | The core returns `status: error` and exit code 3. The check fails closed, with an org switch for outages | [0006](adr/0006-fail-open-vs-fail-closed.md) |
 | R8 No long-lived credential | Workload identity federation: a short-lived token per job | [0010](adr/0010-local-vs-ci-authentication.md) |
 | R9 Code cannot steer the reviewer | Agent configuration is deleted before the review, Claude Code runs in restricted mode, and the credential is kept out of steps that hold the GitHub token | [0001](adr/0001-reviewer-core.md) |
@@ -162,6 +162,12 @@ Both add state that lives outside a single review run. The rest of the design ke
 - Who decides: a member of the Adaptive Security team, usually the rotation engineer. Checking that the approver belongs to the team needs a token that can read team membership, which the workflow's own token cannot do. [decide: a GitHub App owned by the Adaptive Security team, or another way to verify the approver.]
 - How a dismissal sticks: the comment sync step matches each new finding against the dismissed ones for that PR, by the same fingerprint it uses to track findings across pushes, and neither posts nor blocks on a match. Matching is the open problem already recorded in [0005](adr/0005-required-check-semantics.md): the model rewords findings between runs.
 - How it relates to the bypass in [0005](adr/0005-required-check-semantics.md): an approved dismissal removes the need for a bypass on that finding, so the bypass remains for emergencies and for findings that cannot be matched.
+- **Time limit (R6).** A blocked PR must not wait longer than [N] working hours. Options:
+  - A request releases the block at once. Raising a false-positive request turns the finding into a warning, and the PR can merge while the request is reviewed after the fact. This is the fastest for engineers. The risk is that an author can request dismissal of a real bug to merge it, so every request is reviewed, and a rejected one after merge becomes a follow-up fix with an owner.
+  - The block expires. The finding blocks until the team decides or [N] working hours pass. After that the check passes with a warning, and the request stays in the review queue.
+  - Escalation only. The rotation engineer is paged when the limit is near, and the block stays until someone decides. This does not guarantee the limit.
+
+  [decide: the option, and N.]
 - Every decision feeds back: approved dismissals count as false positives, rejected ones as confirmed findings, and repeated false positives lead to a policy precedent or an eval case.
 
 ## What is verified and what is not
