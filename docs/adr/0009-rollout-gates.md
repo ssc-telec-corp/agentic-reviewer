@@ -35,7 +35,7 @@ A repository variable with the same name overrides the organization variable, wh
 | 0. Baseline | Eval corpus only | n/a | Corpus contains at least [N] real cases; gate model meets `eval/thresholds.yaml` |
 | 1. Shadow | [pilot repos], ruleset in evaluate mode | comments off, blocking `none`, fail mode `open` | 2 weeks of findings labelled; precision at least 70% ([0008](0008-measuring-precision.md)) |
 | 2. Comments | [pilot repos], ruleset active | comments on, blocking `none`, fail mode `open` | 2 more weeks at least 70% precision from author feedback; precision of HIGH findings at least [X]% |
-| 3. Blocking on pilots | [pilot repos] | comments on, blocking `high`, fail mode `open` | 2 weeks with the bypass process running within [SLA]; every bypass recorded |
+| 3. Blocking on pilots | [pilot repos] | comments on, blocking `high`, fail mode `open` | 2 weeks with every false-positive request reviewed ([0005](0005-required-check-semantics.md)), and every request and bypass recorded |
 | 4. Org-wide | All repos, ruleset active | comments on, blocking `high`, fail mode `open` | Failure rate of the check, excluding HIGH findings, below [Y]% of runs over 2 weeks; manual SIA retired |
 | 5. Fail closed | All repos | fail mode `closed` | n/a (steady state) |
 

@@ -15,7 +15,7 @@ What the system has to achieve, independent of how. The mechanisms are under "Ho
 - **R3.** The review supplements the human code review every PR already gets. It does not replace it.
 - **R4.** The reviewer speaks only when it has something to say. A PR without findings gets no comment.
 - **R5.** What the PR shows is current. A finding introduced by a later push appears, and a finding that was fixed is marked resolved.
-- **R6.** A change with a confirmed serious vulnerability does not merge. No finding blocks a PR for longer than [N] working hours: if the Adaptive Security team has not decided by then, the PR is unblocked and the finding is reviewed after the merge.
+- **R6.** A change with a serious vulnerability does not merge unnoticed, and nobody waits on another person to unblock their PR. A HIGH finding blocks until the author fixes it or disputes it. Disputing it releases the block at once, and the Adaptive Security team reviews the dispute afterwards.
 - **R7.** A review that did not happen is never mistaken for a clean review.
 - **R8.** No long-lived model credential exists that could leak.
 - **R9.** Code under review cannot change how it is reviewed, or reach the reviewer's credentials.
@@ -27,6 +27,7 @@ What the system has to achieve, independent of how. The mechanisms are under "Ho
 - **R15.** The rules the reviewer applies are owned by the Adaptive Security team, and can be extended with company-specific knowledge.
 - **R16.** The Adaptive Security team can see what the reviewer reviewed and found across all repositories, assess the findings, and turn real vulnerabilities, missed ones and false alarms into eval cases.
 - **R17.** A PR author can report a finding as a false positive from the PR. The Adaptive Security team decides, the decision is recorded, and a dismissed finding is not reported or blocking again on that PR.
+- **R18.** The Adaptive Security team is notified on Slack when a review run fails, so that a failed run is never silent.
 
 ## Architecture
 
@@ -72,7 +73,7 @@ The reviewer core is the only component that calls a model. The PR integration a
 | R3 Supplements human review | Existing review requirements stay unchanged. The reviewer does not request reviewers | [0002](adr/0002-classifier-vs-single-policy.md) |
 | R4 Speaks only with findings | Comments are posted only for findings. The SIA criteria go to the job summary | [0002](adr/0002-classifier-vs-single-policy.md), [0005](adr/0005-required-check-semantics.md) |
 | R5 PR shows the current state | The comment sync step posts new findings and resolves fixed ones | [0005](adr/0005-required-check-semantics.md) |
-| R6 Serious vulnerabilities do not merge, and blocks are short | HIGH findings fail the required check. A false-positive request, or a bypass by the Adaptive Security team, ends the block. The time limit is not designed yet (see "Components still to design") | [0005](adr/0005-required-check-semantics.md) |
+| R6 Serious vulnerabilities do not merge unnoticed; nobody waits on a person | HIGH findings fail the required check. A fix, or a false-positive request from the author, ends the block. A bypass by the Adaptive Security team remains for emergencies | [0005](adr/0005-required-check-semantics.md) |
 | R7 No silent failure | The core returns `status: error` and exit code 3. The check fails closed, with an org switch for outages | [0006](adr/0006-fail-open-vs-fail-closed.md) |
 | R8 No long-lived credential | Workload identity federation: a short-lived token per job | [0010](adr/0010-local-vs-ci-authentication.md) |
 | R9 Code cannot steer the reviewer | Agent configuration is deleted before the review, Claude Code runs in restricted mode, and the credential is kept out of steps that hold the GitHub token | [0001](adr/0001-reviewer-core.md) |
@@ -84,6 +85,7 @@ The reviewer core is the only component that calls a model. The PR integration a
 | R15 Rules owned by security | Policy text in the central repository: upstream's reference rules, plus org precedents and repository overlays added by the Adaptive Security team | [0003](adr/0003-precedents-vs-rules.md), [0011](adr/0011-policy-layering.md) |
 | R16 Monitoring and assessment | Not designed yet. Candidates: the PR workflow sends each `result.json` to a central results store, and the Adaptive Security team assesses findings there; assessed findings are converted into corpus cases | see "Components still to design" |
 | R17 False-positive requests | Not designed yet. Candidates: the author replies to the finding with a fixed command; the Adaptive Security team approves or rejects it; the comment sync step remembers dismissed findings and stops reporting and blocking on them | see "Components still to design" |
+| R18 Slack alerts on failed runs | A final workflow step that runs only when the job failed, and posts the repository, PR, run link and failure reason to [Adaptive Security team channel] through a Slack incoming webhook stored as an organization secret. The scheduled eval and the release workflow alert the same way | [0006](adr/0006-fail-open-vs-fail-closed.md), [0007](adr/0007-eval-corpus-and-judge.md) |
 
 ## Components and contracts
 
@@ -133,6 +135,7 @@ A composite GitHub Action, called by the workflow the org ruleset requires.
 3. **Sync comments:** match the findings against the bot's earlier comments, post new ones, reply to and resolve the ones no longer reported, and keep one summary comment once the PR has had findings (R4, R5).
 4. **Decide the check:** fail when the review did not complete (unless fail mode is open), and fail on a HIGH finding when blocking is on (R6, R7, R14).
 5. **Record:** write the criteria touched and the findings to the job summary, and upload `result.json` (R13).
+6. **Alert:** when the review did not complete or a step failed, post to [Adaptive Security team channel] on Slack (R18). A check that fails because of a HIGH finding does not alert, since that is the reviewer working as intended.
 
 ### Eval harness
 
@@ -162,12 +165,7 @@ Both add state that lives outside a single review run. The rest of the design ke
 - Who decides: a member of the Adaptive Security team, usually the rotation engineer. Checking that the approver belongs to the team needs a token that can read team membership, which the workflow's own token cannot do. [decide: a GitHub App owned by the Adaptive Security team, or another way to verify the approver.]
 - How a dismissal sticks: the comment sync step matches each new finding against the dismissed ones for that PR, by the same fingerprint it uses to track findings across pushes, and neither posts nor blocks on a match. Matching is the open problem already recorded in [0005](adr/0005-required-check-semantics.md): the model rewords findings between runs.
 - How it relates to the bypass in [0005](adr/0005-required-check-semantics.md): an approved dismissal removes the need for a bypass on that finding, so the bypass remains for emergencies and for findings that cannot be matched.
-- **Time limit (R6).** A blocked PR must not wait longer than [N] working hours. Options:
-  - A request releases the block at once. Raising a false-positive request turns the finding into a warning, and the PR can merge while the request is reviewed after the fact. This is the fastest for engineers. The risk is that an author can request dismissal of a real bug to merge it, so every request is reviewed, and a rejected one after merge becomes a follow-up fix with an owner.
-  - The block expires. The finding blocks until the team decides or [N] working hours pass. After that the check passes with a warning, and the request stays in the review queue.
-  - Escalation only. The rotation engineer is paged when the limit is near, and the block stays until someone decides. This does not guarantee the limit.
-
-  [decide: the option, and N.]
+- **A request releases the block (R6).** Raising a false-positive request turns the finding into a warning straight away, so the PR can merge while the request waits for review. If the team approves it, the finding is dismissed. If the team rejects it while the PR is open, the finding blocks again. If the PR has already merged, a rejected request becomes a follow-up fix with an owner. The risk is that an author disputes a real bug to get it merged. Every request is therefore reviewed, and requests and their outcomes are visible per author and repository in the results store (R16).
 - Every decision feeds back: approved dismissals count as false positives, rejected ones as confirmed findings, and repeated false positives lead to a policy precedent or an eval case.
 
 ## What is verified and what is not

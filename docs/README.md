@@ -27,10 +27,10 @@ flowchart TD
     H -- "no" --> F["Findings posted as PR comments<br/>check passes, PR can merge"]
     H -- "yes" --> B2["Check fails, PR cannot merge"]
     B2 --> I["Engineer fixes the code and pushes<br/>(the review runs again)"]
-    B2 --> J["Finding is wrong:<br/>the rotation engineer reviews<br/>and merges through a bypass"]
+    B2 --> J["Finding is wrong:<br/>author raises a false-positive request,<br/>the block lifts at once"]
 ```
 
-Once rollout is complete, a PR cannot merge while the review reports a HIGH severity finding, or while the review cannot run. During rollout, a review that cannot run lets the PR through with a warning. MEDIUM and LOW findings are comments only. When a HIGH finding is wrong, the security team decides and merges through a recorded bypass. Blocking on HIGH findings is switched on during rollout, once the security team has measured how often HIGH findings are right.
+Once rollout is complete, a PR cannot merge while the review reports a HIGH severity finding, or while the review cannot run. During rollout, a review that cannot run lets the PR through with a warning. MEDIUM and LOW findings are comments only. When the author thinks a HIGH finding is wrong, they raise a false-positive request on the PR, and the Adaptive Security team decides. Raising the request releases the block at once, and the team reviews it afterwards. A dismissed finding does not come back on that PR. Blocking on HIGH findings is switched on during rollout, once the Adaptive Security team has measured how often HIGH findings are right.
 
 ## How the review stays good
 
@@ -56,6 +56,6 @@ Each missed bug becomes a test case, and each wrong finding can become a policy 
 - [design.md](design.md): what is built and how it fits together
 - [policy-authoring.md](policy-authoring.md): the policy format, and how to switch on and fill in the drafted precedents
 - [evaluation.md](evaluation.md): corpus format, judge, thresholds, how to add a case
-- [runbook.md](runbook.md): outages, bypass, cost alerts, releases, contacts
+- [runbook.md](runbook.md): outages, false-positive requests and bypass, cost alerts, releases, contacts
 - [engineer-faq.md](engineer-faq.md): for PR authors, covering what the bot does and how to respond
 - [adr/](adr/README.md): the decisions behind the design, and why
