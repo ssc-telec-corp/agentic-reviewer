@@ -33,7 +33,7 @@ The base policy lives in the same repository as the action ([0011](0011-policy-l
 Option C.
 
 - **Version scheme.** `vMAJOR.MINOR.PATCH`.
-  - MAJOR: a breaking change to the action's inputs or outputs, or to the overlay format.
+  - MAJOR: a breaking change to the action's inputs or outputs, or to the policy file format.
   - MINOR: anything that can change findings, such as a base-policy change, a model change or an upstream SHA bump.
   - PATCH: changes that cannot change findings, such as docs or wrapper fixes with no effect on review output.
 - **Release workflow.** `.github/workflows/release.yml` runs on manual dispatch with a version input. It checks that the version is valid semver and higher than the latest release. It runs the policy validator and the full eval with `eval/thresholds.yaml`. Only if the eval passes does it create the tag and the GitHub Release. The release notes contain the generated changelog, the upstream SHA, the model ID, and the eval summary (recall, clean-case false positives, cost per case). The eval report is attached to the release as an asset.

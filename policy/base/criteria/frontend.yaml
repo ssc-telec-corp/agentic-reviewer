@@ -1,3 +1,6 @@
+# DRAFT, NOT LOADED: precedents here are used only when policy/base/global.yaml
+# sets precedents_enabled: true. The id, name and touches fields are always
+# loaded, because the reviewer labels findings with the criterion id.
 id: frontend
 name: UI / frontend changes
 touches: Browser code, templates, HTML rendering, Content-Security-Policy and other browser-facing response headers.

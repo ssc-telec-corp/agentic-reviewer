@@ -1,3 +1,6 @@
+# DRAFT, NOT LOADED: precedents here are used only when policy/base/global.yaml
+# sets precedents_enabled: true. The id, name and touches fields are always
+# loaded, because the reviewer labels findings with the criterion id.
 id: dependencies
 name: Third-party dependencies
 touches: Package manifests, lock files, package-source configuration (nuget.config, .npmrc, pip.conf), and tools or images fetched during builds.

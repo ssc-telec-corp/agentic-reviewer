@@ -10,11 +10,11 @@ flowchart TD
     B --> C
 
     subgraph W["adaptive-security-reviewer vX.Y.Z (our wrapper)"]
-        C["Load the policy:<br/>org base rules + this repo's overlay"]
+        C["Add the SIA criteria to<br/>Anthropic's default rules"]
         subgraph U["claude-code-security-review (Anthropic's action, unchanged)"]
             D1["1. Claude reads the change<br/>and lists possible vulnerabilities"]
             D2["2. Known noise is dropped"]
-            D3["3. Claude double-checks each one<br/>against our policy"]
+            D3["3. Claude double-checks each one<br/>against Anthropic's default rules"]
             D1 --> D2 --> D3
         end
         C --> D1
@@ -54,7 +54,7 @@ Each missed bug becomes a test case, and each wrong finding can become a policy 
 ## Documents
 
 - [design.md](design.md): what is built and how it fits together
-- [policy-authoring.md](policy-authoring.md): how to add or change a precedent, and how a repository adds its overlay
+- [policy-authoring.md](policy-authoring.md): the policy format, and how to switch on and fill in the drafted precedents
 - [evaluation.md](evaluation.md): corpus format, judge, thresholds, how to add a case
 - [runbook.md](runbook.md): outages, bypass, cost alerts, releases, contacts
 - [engineer-faq.md](engineer-faq.md): for PR authors, covering what the bot does and how to respond

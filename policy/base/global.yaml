@@ -1,8 +1,12 @@
 # Org base policy: applies to every repository. Owned by [security-team].
-# These precedents ADD to the default rules of claude-code-security-review,
-# which apply first and win on conflict. Do not repeat or contradict them.
+# DRAFT, NOT LOADED: while precedents_enabled is false, the reviewer uses only
+# the default rules of claude-code-security-review plus the SIA criteria list.
+# The precedents in this directory are starting drafts for [org] to edit.
+# When enabled, they ADD to the upstream defaults, which apply first and win
+# on conflict. Do not repeat or contradict them. See docs/adr/0011.
 # Format and authoring rules: docs/policy-authoring.md.
 version: 1
+precedents_enabled: false
 
 trust_boundaries:
   - id: TB-REQUEST

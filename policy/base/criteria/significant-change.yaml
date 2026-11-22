@@ -1,3 +1,6 @@
+# DRAFT, NOT LOADED: precedents here are used only when policy/base/global.yaml
+# sets precedents_enabled: true. The id, name and touches fields are always
+# loaded, because the reviewer labels findings with the criterion id.
 id: significant-change
 name: Significant changes
 touches: New external integrations (webhooks, partner APIs), new data stores or file access, new classes of endpoint, or refactors of how endpoints, auth or configuration are wired.

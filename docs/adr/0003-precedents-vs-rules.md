@@ -28,11 +28,11 @@ The upstream action already uses precedents in its default filtering instruction
 
 ## Decision
 
-Option B. Every precedent has an `id`, a `statement` and a `reason`, and may have an `example`. The validator fails on a missing statement or reason, or on a duplicate id. The example is optional so that small teams can maintain repo overlays ([0011](0011-policy-layering.md)). Base-policy precedents should include an example.
+Option B. Every precedent has an `id`, a `statement` and a `reason`, and may have an `example`. The validator fails on a missing statement or reason, or on a duplicate id. The example is optional, to keep precedents cheap to maintain.
 
 Precedents describe architecture and recurring decisions, not individual eval cases. A precedent that names a corpus case turns the eval into a memory test, and reviewers of policy changes reject it.
 
-Our precedents add to upstream's defaults and never repeat or contradict them, because upstream's defaults come first and win ([0011](0011-policy-layering.md)). Before a precedent is added, its author checks it against the default text in `policy/base/upstream-filter-defaults.txt`.
+Our precedents add to upstream's defaults and never repeat or contradict them, because upstream's defaults come first and win ([0011](0011-policy-layering.md)). Before a precedent is added, its author checks it against upstream's default text. For now no precedents are loaded, and the review runs on upstream's defaults alone ([0011](0011-policy-layering.md)).
 
 The upstream regex exclusions stay active. Turning them off would require a fork ([0001](0001-composite-action-vs-custom-service.md)).
 

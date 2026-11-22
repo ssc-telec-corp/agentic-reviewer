@@ -1,3 +1,6 @@
+# DRAFT, NOT LOADED: precedents here are used only when policy/base/global.yaml
+# sets precedents_enabled: true. The id, name and touches fields are always
+# loaded, because the reviewer labels findings with the criterion id.
 id: infrastructure
 name: Infrastructure as code
 touches: Dockerfiles, Kubernetes manifests, Helm charts, Terraform, or anything that changes how a service is built, exposed or isolated.

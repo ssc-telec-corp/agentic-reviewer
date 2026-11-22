@@ -1,3 +1,6 @@
+# DRAFT, NOT LOADED: precedents here are used only when policy/base/global.yaml
+# sets precedents_enabled: true. The id, name and touches fields are always
+# loaded, because the reviewer labels findings with the criterion id.
 id: network
 name: Network changes
 touches: CORS, outbound HTTP, listening addresses, trusted proxies and forwarded headers, IP-based restrictions, network settings in config.
