@@ -1,8 +1,8 @@
-# 0005. One reviewer model, Claude Opus 5.5; a second model is measured before it is used
+# 0004. One reviewer model, Claude Opus 5.5; a second model is measured before it is used
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0002](0002-composite-action-vs-custom-service.md), [0007](0007-fail-open-vs-fail-closed.md), [0008](0008-eval-corpus-and-judge.md)
+- Related: [0001](0001-composite-action-vs-custom-service.md), [0006](0006-fail-open-vs-fail-closed.md), [0007](0007-eval-corpus-and-judge.md)
 
 **In short:** every PR is reviewed by one model, `claude-opus-5-5`. We do not add a second reviewer model yet. Instead, the eval runs every test case on both Opus and Sonnet, and the results decide whether a second reviewer is worth its cost.
 
@@ -42,12 +42,12 @@ To decide on Option B with data instead of opinion, the eval runs every test cas
 
 ## Consequences
 
-- If Opus is unavailable, the review fails, and the outage rules in [0007](0007-fail-open-vs-fail-closed.md) decide whether the check blocks the merge. There is no automatic switch to another model.
-- Changing the model is a behaviour change: it needs an eval run and a new minor release ([0014](0014-versioned-releases.md)).
+- If Opus is unavailable, the review fails, and the outage rules in [0006](0006-fail-open-vs-fail-closed.md) decide whether the check blocks the merge. There is no automatic switch to another model.
+- Changing the model is a behaviour change: it needs an eval run and a new minor release ([0012](0012-versioned-releases.md)).
 
 ## Open questions
 
-- [decide: adopt Option B if the two models together find at least [X] more of the known vulnerabilities than Opus alone, while false findings on clean changes stay within the threshold in `eval/thresholds.yaml`. The synthetic test set is too small to decide this, so it needs real cases ([0008](0008-eval-corpus-and-judge.md)).]
+- [decide: adopt Option B if the two models together find at least [X] more of the known vulnerabilities than Opus alone, while false findings on clean changes stay within the threshold in `eval/thresholds.yaml`. The synthetic test set is too small to decide this, so it needs real cases ([0007](0007-eval-corpus-and-judge.md)).]
 
 ## Future opportunities
 

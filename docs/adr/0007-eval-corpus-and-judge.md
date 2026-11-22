@@ -1,8 +1,8 @@
-# 0008. Eval corpus of labelled commits, run through the upstream pipeline, judged by an LLM
+# 0007. Eval corpus of labelled commits, run through the upstream pipeline, judged by an LLM
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0002](0002-composite-action-vs-custom-service.md), [0004](0004-precedents-vs-rules.md), [0005](0005-models-and-second-reviewer.md), [0009](0009-measuring-precision.md)
+- Related: [0001](0001-composite-action-vs-custom-service.md), [0003](0003-precedents-vs-rules.md), [0004](0004-models-and-second-reviewer.md), [0008](0008-measuring-precision.md)
 
 ## Context
 
@@ -45,14 +45,14 @@ The same command runs in three places, with no change to the harness:
 
 - **Locally**, for a developer changing the policy or the wrapper. One command runs the whole corpus and writes the report.
 - **On a schedule in GitHub Actions**, using the workflow `.github/workflows/adaptive-security-reviewer-eval.yml`. It runs every [Monday 06:00 UTC] and on manual dispatch. A scheduled run is needed even when nothing in this repository changed, because three things outside it change review quality:
-  - Upstream installs the latest Claude Code from npm on every run, with no version pin ([0002](0002-composite-action-vs-custom-service.md)).
+  - Upstream installs the latest Claude Code from npm on every run, with no version pin ([0001](0001-composite-action-vs-custom-service.md)).
   - Model behaviour behind a fixed model ID can change.
-  - The filter's hard-coded validation model can be retired, which silently turns filtering off ([0012](0012-local-vs-ci-authentication.md)).
-- **In the release workflow**, as the gate before a version is tagged ([0014](0014-versioned-releases.md)).
+  - The filter's hard-coded validation model can be retired, which silently turns filtering off ([0010](0010-local-vs-ci-authentication.md)).
+- **In the release workflow**, as the gate before a version is tagged ([0012](0012-versioned-releases.md)).
 
 The scheduled workflow:
 - checks out the repository with full history and fetches every case's refs;
-- runs the corpus on both models ([0005](0005-models-and-second-reviewer.md));
+- runs the corpus on both models ([0004](0004-models-and-second-reviewer.md));
 - writes the report to the job summary;
 - uploads the full report, with per-case results and judge decisions, as an artifact kept for [90] days;
 - compares the numbers with the eval report attached to the latest release, and shows the difference per case.
@@ -61,7 +61,7 @@ The workflow fails when the gate model crosses `eval/thresholds.yaml`. A failure
 
 Checks that do not call a model run on every PR to this repository in a separate, cheap workflow:
 - the policy validator;
-- the test that compares the upstream filter defaults with the pinned SHA ([0013](0013-policy-layering.md));
+- the test that compares the upstream filter defaults with the pinned SHA ([0011](0011-policy-layering.md));
 - validation of every corpus case file;
 - the harness's unit tests;
 - the docs lint.
@@ -82,5 +82,5 @@ Checks that do not call a model run on every PR to this repository in a separate
 ## Future opportunities
 
 - Three runs per case to measure variance, once the per-case cost is known.
-- Run a headless-variant reviewer next to the upstream pipeline in the same report ([0002](0002-composite-action-vs-custom-service.md)).
+- Run a headless-variant reviewer next to the upstream pipeline in the same report ([0001](0001-composite-action-vs-custom-service.md)).
 - Automatic miss triage that reads the Claude Code transcript (file not read, read but not flagged), as the reference design does.

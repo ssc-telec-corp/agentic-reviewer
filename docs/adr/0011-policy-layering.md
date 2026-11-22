@@ -1,8 +1,8 @@
-# 0013. Policy layering: org base policy plus an optional repo overlay read from the base branch
+# 0011. Policy layering: org base policy plus an optional repo overlay read from the base branch
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0003](0003-classifier-vs-single-policy.md), [0004](0004-precedents-vs-rules.md)
+- Related: [0002](0002-classifier-vs-single-policy.md), [0003](0003-precedents-vs-rules.md)
 
 ## Context
 
@@ -43,7 +43,7 @@ Option C.
 
 ## Consequences
 
-- Most repositories start with no overlay and get only the base policy. Precision on those repos is expected to be lower than on repos with an overlay. Shadow-mode data ([0010](0010-rollout-gates.md)) shows which repos need one first.
+- Most repositories start with no overlay and get only the base policy. Precision on those repos is expected to be lower than on repos with an overlay. Shadow-mode data ([0009](0009-rollout-gates.md)) shows which repos need one first.
 - The demo app in this POC has an overlay, which shows the format.
 
 ## Future opportunities

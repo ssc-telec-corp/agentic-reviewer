@@ -1,14 +1,14 @@
-# 0007. Fail closed by default, with an org variable for break-glass fail-open
+# 0006. Fail closed by default, with an org variable for break-glass fail-open
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0002](0002-composite-action-vs-custom-service.md), [0005](0005-models-and-second-reviewer.md), [0006](0006-required-check-semantics.md), [0010](0010-rollout-gates.md)
+- Related: [0001](0001-composite-action-vs-custom-service.md), [0004](0004-models-and-second-reviewer.md), [0005](0005-required-check-semantics.md), [0009](0009-rollout-gates.md)
 
 ## Context
 
-The review depends on the Anthropic API and GitHub Actions. The upstream action fails open without saying so. When Claude Code or the API errors, the scan step logs a warning, reports zero findings, and the job passes. When the filter's validation call fails, it posts unfiltered findings ([0002](0002-composite-action-vs-custom-service.md)). Without a wrapper check, an outage looks like a clean review.
+The review depends on the Anthropic API and GitHub Actions. The upstream action fails open without saying so. When Claude Code or the API errors, the scan step logs a warning, reports zero findings, and the job passes. When the filter's validation call fails, it posts unfiltered findings ([0001](0001-composite-action-vs-custom-service.md)). Without a wrapper check, an outage looks like a clean review.
 
-With one vendor and no fallback model ([0005](0005-models-and-second-reviewer.md)), a full API outage stops every review in the org.
+With one vendor and no fallback model ([0004](0004-models-and-second-reviewer.md)), a full API outage stops every review in the org.
 
 ## Considered options
 
@@ -40,11 +40,11 @@ The workflow passes `fail-mode: ${{ vars.ASR_FAIL_MODE || 'closed' }}`. With `cl
 ## Consequences
 
 - During an outage, on-call sets `ASR_FAIL_MODE=open`. Afterwards they set it back and re-run the skipped checks. The [runbook](../runbook.md) has the commands.
-- A repository admin can override `ASR_FAIL_MODE` for their own repository with a repository variable. See [0010](0010-rollout-gates.md) for this risk.
+- A repository admin can override `ASR_FAIL_MODE` for their own repository with a repository variable. See [0009](0009-rollout-gates.md) for this risk.
 - The verify step depends on upstream's file names and log strings. Bumping the upstream SHA must include a test run that exercises the error path.
 
 ## Future opportunities
 
-- Retry with a fallback model before declaring an error ([0005](0005-models-and-second-reviewer.md)).
+- Retry with a fallback model before declaring an error ([0004](0004-models-and-second-reviewer.md)).
 - Automatic revert of `ASR_FAIL_MODE` after [N] hours.
 - [decide: who besides security on-call may flip the variable.]

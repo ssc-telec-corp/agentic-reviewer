@@ -1,8 +1,8 @@
-# 0012. Authentication: API key in every mode
+# 0010. Authentication: API key in every mode
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0002](0002-composite-action-vs-custom-service.md), [0008](0008-eval-corpus-and-judge.md)
+- Related: [0001](0001-composite-action-vs-custom-service.md), [0007](0007-eval-corpus-and-judge.md)
 
 ## Context
 
@@ -10,7 +10,7 @@ The POC is built on a personal machine with a personal Claude subscription and n
 
 - `validate_claude_available()` in upstream exits unless `ANTHROPIC_API_KEY` is set, before Claude Code runs. The action cannot run on subscription credentials, even for the find stage.
 - The filter calls the Messages API through the `anthropic` SDK with that key.
-- The filter's startup check calls `claude-3-5-haiku-20241022`. If the call fails, filtering is disabled silently ([0002](0002-composite-action-vs-custom-service.md)).
+- The filter's startup check calls `claude-3-5-haiku-20241022`. If the call fails, filtering is disabled silently ([0001](0001-composite-action-vs-custom-service.md)).
 - Claude Code 2.1.311 headless reports `total_cost_usd` at list price, on either a subscription or an API key.
 
 Assumptions to verify:
@@ -49,4 +49,4 @@ The eval judge also uses the key, through the same `anthropic` SDK version that 
 ## Future opportunities
 
 - Workload identity, if Anthropic offers OIDC-based credentials for GitHub Actions. Unknown whether it does.
-- A headless variant ([0002](0002-composite-action-vs-custom-service.md)) could run on subscription credentials for individual developers' local pre-PR checks.
+- A headless variant ([0001](0001-composite-action-vs-custom-service.md)) could run on subscription credentials for individual developers' local pre-PR checks.

@@ -1,8 +1,8 @@
-# 0004. Write the policy as precedents with reasons, not as rules
+# 0003. Write the policy as precedents with reasons, not as rules
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0003](0003-classifier-vs-single-policy.md), [0008](0008-eval-corpus-and-judge.md), [0013](0013-policy-layering.md)
+- Related: [0002](0002-classifier-vs-single-policy.md), [0007](0007-eval-corpus-and-judge.md), [0011](0011-policy-layering.md)
 
 ## Context
 
@@ -24,15 +24,15 @@ The upstream action already uses precedents in its default filtering instruction
 
 - Pro: The reason lets the reviewer generalize, and tells a later editor why the precedent exists.
 - Pro: Same style as the upstream defaults, so the combined filter text reads as one document.
-- Con: Longer than rules, and the outcome is probabilistic, so it has to be measured ([0008](0008-eval-corpus-and-judge.md)).
+- Con: Longer than rules, and the outcome is probabilistic, so it has to be measured ([0007](0007-eval-corpus-and-judge.md)).
 
 ## Decision
 
-Option B. Every precedent has an `id`, a `statement` and a `reason`, and may have an `example`. The validator fails on a missing statement or reason, or on a duplicate id. The example is optional so that small teams can maintain repo overlays ([0013](0013-policy-layering.md)). Base-policy precedents should include an example.
+Option B. Every precedent has an `id`, a `statement` and a `reason`, and may have an `example`. The validator fails on a missing statement or reason, or on a duplicate id. The example is optional so that small teams can maintain repo overlays ([0011](0011-policy-layering.md)). Base-policy precedents should include an example.
 
 Precedents describe architecture and recurring decisions, not individual eval cases. A precedent that names a corpus case turns the eval into a memory test, and reviewers of policy changes reject it.
 
-The upstream regex exclusions stay active. Turning them off would require a fork ([0002](0002-composite-action-vs-custom-service.md)).
+The upstream regex exclusions stay active. Turning them off would require a fork ([0001](0001-composite-action-vs-custom-service.md)).
 
 ## Consequences
 
@@ -41,4 +41,4 @@ The upstream regex exclusions stay active. Turning them off would require a fork
 ## Future opportunities
 
 - If the eval shows real misses with `filter_stage: hard_rules`, propose an upstream input that disables or narrows the hard exclusions.
-- Feed author feedback from disputed findings ([0009](0009-measuring-precision.md)) into new precedents, with a security-team review of each one.
+- Feed author feedback from disputed findings ([0008](0008-measuring-precision.md)) into new precedents, with a security-team review of each one.

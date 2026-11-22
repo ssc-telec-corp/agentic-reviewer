@@ -1,8 +1,8 @@
-# 0002. Wrap `claude-code-security-review` in a composite action
+# 0001. Wrap `claude-code-security-review` in a composite action
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0005](0005-models-and-second-reviewer.md), [0007](0007-fail-open-vs-fail-closed.md), [0008](0008-eval-corpus-and-judge.md), [0012](0012-local-vs-ci-authentication.md), [0013](0013-policy-layering.md)
+- Related: [0004](0004-models-and-second-reviewer.md), [0006](0006-fail-open-vs-fail-closed.md), [0007](0007-eval-corpus-and-judge.md), [0010](0010-local-vs-ci-authentication.md), [0011](0011-policy-layering.md)
 
 ## Context
 
@@ -11,7 +11,7 @@ The candidate starting point is Anthropic's `claude-code-security-review` action
 Reading the source showed behaviour that the SIA use case has to work around:
 
 1. On an error, the scan step writes `{"error": ...}` and reports `findings_count=0`, and the job still passes. A model outage therefore looks like a clean review.
-2. The filter's startup check calls the hard-coded model `claude-3-5-haiku-20241022`. If that call fails, the filter turns itself off with a log warning, and every candidate is posted unfiltered. Whether that model still answers is Unknown. It is the first thing to verify ([0012](0012-local-vs-ci-authentication.md)).
+2. The filter's startup check calls the hard-coded model `claude-3-5-haiku-20241022`. If that call fails, the filter turns itself off with a log warning, and every candidate is posted unfiltered. Whether that model still answers is Unknown. It is the first thing to verify ([0010](0010-local-vs-ci-authentication.md)).
 3. By default it reviews only the first commit of a PR (`run-every-commit: false`). Separately, its comment script posts nothing if any earlier bot security comment exists on the PR.
 4. It installs `@anthropic-ai/claude-code` from npm without a version pin.
 5. The scan step holds `GITHUB_TOKEN` and the model credential in the same environment as Claude Code.
@@ -45,13 +45,13 @@ Reading the source showed behaviour that the SIA use case has to work around:
 Option A, as the first option. It gets a working reviewer on every PR soonest, and its eval numbers become the baseline that Options B, C and D have to beat. `action/action.yml` is a composite action with these steps:
 
 1. Refuse fork PRs. GitHub runs them without repository secrets, so the review could not run anyway.
-2. Render the policy ([0013](0013-policy-layering.md)) into the two instruction files.
+2. Render the policy ([0011](0011-policy-layering.md)) into the two instruction files.
 3. Remove agent configuration files (`.claude/`, `CLAUDE.md`, `.mcp.json`) from the checked-out working tree, so that a PR cannot change how Claude Code behaves during its own review.
 4. Call `anthropics/claude-code-security-review@0c6a49f...` with `run-every-commit: true`, a current `claude-model`, and the rendered files.
-5. Verify the outcome. The step reads `claudecode-results.json` and `claudecode-error.log`, and fails the check if the scan errored or if the filter disabled itself ([0007](0007-fail-open-vs-fail-closed.md)), or, when blocking is on, if a HIGH finding was reported ([0006](0006-required-check-semantics.md)).
+5. Verify the outcome. The step reads `claudecode-results.json` and `claudecode-error.log`, and fails the check if the scan errored or if the filter disabled itself ([0006](0006-fail-open-vs-fail-closed.md)), or, when blocking is on, if a HIGH finding was reported ([0005](0005-required-check-semantics.md)).
 6. Write every kept finding to the job summary. This is done because item 3 can suppress inline comments on later pushes.
 
-The eval harness ([0008](0008-eval-corpus-and-judge.md)) runs the upstream `main()` at the same SHA, replacing only the two methods that fetch PR data from GitHub.
+The eval harness ([0007](0007-eval-corpus-and-judge.md)) runs the upstream `main()` at the same SHA, replacing only the two methods that fetch PR data from GitHub.
 
 ## Consequences
 
@@ -60,7 +60,7 @@ The eval harness ([0008](0008-eval-corpus-and-judge.md)) runs the upstream `main
 
 ## Future opportunities
 
-- **Adjudication pass.** Upstream writes dropped candidates to `filtering_summary.excluded_findings_details`. A wrapper step after the upstream action could re-examine them ([0005](0005-models-and-second-reviewer.md)) without forking.
+- **Adjudication pass.** Upstream writes dropped candidates to `filtering_summary.excluded_findings_details`. A wrapper step after the upstream action could re-examine them ([0004](0004-models-and-second-reviewer.md)) without forking.
 - **Upstream contributions** for items 1 to 4: a non-zero exit on scan error, a configurable or removed validation model, posting new findings on later pushes, and a pinned Claude Code version. Each one merged upstream deletes a workaround here.
 - **Option C as a measured alternative.** The harness can run a headless variant with the same policy next to the upstream pipeline on the same corpus. Switch only if the eval shows higher recall at the same false-positive ceiling.
 - **Option D** when org-wide telemetry, fix tracking or cross-PR state becomes a requirement.
