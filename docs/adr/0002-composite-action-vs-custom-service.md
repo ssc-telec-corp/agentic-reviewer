@@ -6,7 +6,7 @@
 
 ## Context
 
-The SIA review has to use Anthropic's `claude-code-security-review` action (reviewed at commit `0c6a49f`, 2026-02-11, the head of `main` when checked). It is a composite action. It fetches the PR and its diff from the GitHub API, runs Claude Code headless on the checkout to find candidates, drops candidates with regex hard exclusions, sends each remaining candidate to the Messages API for false-positive filtering, and posts the survivors as inline review comments. Two inputs let a caller add instructions: `custom-security-scan-instructions` is appended to the find prompt, and `false-positive-filtering-instructions` replaces the filter's default instructions.
+The candidate starting point is Anthropic's `claude-code-security-review` action (reviewed at commit `0c6a49f`, 2026-02-11, the head of `main` when checked). It is a composite action. It fetches the PR and its diff from the GitHub API, runs Claude Code headless on the checkout to find candidates, drops candidates with regex hard exclusions, sends each remaining candidate to the Messages API for false-positive filtering, and posts the survivors as inline review comments. Two inputs let a caller add instructions: `custom-security-scan-instructions` is appended to the find prompt, and `false-positive-filtering-instructions` replaces the filter's default instructions.
 
 Reading the source showed behaviour that the SIA use case has to work around:
 
@@ -20,7 +20,8 @@ Reading the source showed behaviour that the SIA use case has to work around:
 
 ### Option A: Composite action that wraps the upstream action at a pinned commit
 
-- Pro: Uses the reviewer the task specifies, with nothing removed. Upstream fixes arrive by bumping one SHA.
+- Pro: A maintained reviewer with a tested prompt, filter and PR commenting, usable today with nothing to port or remove. Upstream fixes arrive by bumping one SHA.
+- Pro: The reference design (Figma) started the same way: this action in shadow mode, with the policy tuned on top.
 - Pro: Instructions enter only through the two supported inputs, so the upstream code stays untouched.
 - Con: Items 3 to 5 can only be worked around in the wrapper's own steps, not fixed.
 
@@ -32,7 +33,7 @@ Reading the source showed behaviour that the SIA use case has to work around:
 ### Option C: In-house reviewer that calls Claude Code headless (`claude -p`) directly
 
 - Pro: Full control of prompt, tools, passes and authentication. This is the route the reference design (Figma) took after starting from this action.
-- Con: The upstream prompt, filter instructions and regex exclusions all have to be ported and then kept in sync by hand. It also does not meet the requirement to use the security reviewer.
+- Con: The upstream prompt, filter instructions and regex exclusions all have to be ported and then kept in sync by hand. Building it first means validating a new reviewer before any eval data shows it beats the upstream one.
 
 ### Option D: Custom review service (GitHub App plus job queue)
 
@@ -41,7 +42,7 @@ Reading the source showed behaviour that the SIA use case has to work around:
 
 ## Decision
 
-Option A. `action/action.yml` is a composite action with these steps:
+Option A, as the first option. It gets a working reviewer on every PR soonest, and its eval numbers become the baseline that Options B, C and D have to beat. `action/action.yml` is a composite action with these steps:
 
 1. Refuse fork PRs ([0011](0011-fork-prs-and-untrusted-content.md)).
 2. Render the policy ([0013](0013-policy-layering.md)) into the two instruction files.
