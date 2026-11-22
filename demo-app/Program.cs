@@ -35,6 +35,7 @@ app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapNoteEndpoints();
 app.MapAdminEndpoints();
+app.MapSupportEndpoints();
 app.MapLinkPreviewEndpoints();
 app.MapInternalEndpoints();
 app.MapGet("/healthz", () => Results.Ok("ok"));
