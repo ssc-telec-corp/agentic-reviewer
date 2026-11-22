@@ -1,0 +1,13 @@
+id: infrastructure
+name: Infrastructure as code
+touches: Dockerfiles, Kubernetes manifests, Helm charts, Terraform, or anything that changes how a service is built, exposed or isolated.
+precedents:
+  - id: INFRA-WORKLOAD-PRIVILEGE
+    statement: Workloads run as non-root, without privilege escalation, and without host namespaces, host paths, privileged mode or added capabilities. Adding any of these, or removing an existing restriction, is a finding.
+    reason: Host access turns any code-execution bug in the app into node compromise.
+  - id: INFRA-EXPOSURE
+    statement: Exposure goes through the standard ingress. A public load balancer or node port, removing a network policy, or a change that makes a network policy's selector stop matching the workload is a finding.
+    reason: Traffic that bypasses the ingress skips TLS and the trusted proxy. A network policy that selects nothing fails open without any error.
+  - id: INFRA-BUILD-DOWNLOADS
+    statement: Builds must not pipe downloads into a shell, download over http, or fetch artifacts without a pinned checksum or digest.
+    reason: The build's output ships to production (TB-BUILD).

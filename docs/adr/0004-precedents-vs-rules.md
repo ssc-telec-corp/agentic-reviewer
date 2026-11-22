@@ -2,37 +2,43 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0003](0003-classifier-vs-single-policy.md), [0008](0008-eval-corpus-and-judge.md)
+- Related: [0003](0003-classifier-vs-single-policy.md), [0008](0008-eval-corpus-and-judge.md), [0013](0013-policy-layering.md)
 
 ## Context
 
 The policy tells the reviewer what counts as a vulnerability in our systems: trust boundaries, accepted risks, and decisions the security team has already made. Two styles are possible:
 
 - A rule: "Do not report SSRF in the reporting service."
-- A precedent: "The reporting service makes outbound requests only through `OutboundClient`, which pins requests to the hosts in `Outbound:AllowedHosts`. Requests built from user input are acceptable when they go through it, and a request that bypasses it is a finding."
+- A precedent: "The reporting service makes outbound requests only through its allowlisted client. Requests built from user input are acceptable when they go through it, and a request that bypasses it is a finding."
 
-The upstream action combined regex hard exclusions with a list of precedents. Its regexes drop findings by keyword. For example, any finding whose text matches "out of bounds" is dropped unless the file extension is `.c`, `.cc`, `.cpp` or `.h`, whatever the finding actually says.
+The upstream action already uses precedents in its default filtering instructions: 17 of them, each a sentence with its reasoning. On top of those it applies regex hard exclusions in `findings_filter.py`. The regexes match keywords. For example, any finding that mentions "out of bounds" is dropped unless the file ends in `.c`, `.cc`, `.cpp` or `.h`, whatever the finding says. They cannot be turned off through an action input.
 
 ## Considered options
 
-### Option A: Rules and regex exclusions
+### Option A: Rules
 
-- Pro: Deterministic and cheap.
-- Con: A rule carries no reasoning, so the model cannot tell when a new case falls outside the rule's intent. Regexes match words, not meaning, and drop real findings silently.
+- Pro: Short, and they look deterministic.
+- Con: A rule carries no reasoning, so the model cannot tell when a new case falls outside the rule's intent.
 
-### Option B: Precedents, each with a statement, a reason and an example
+### Option B: Precedents with a statement and a reason, plus an optional example
 
-- Pro: The reason lets the reviewer generalize to cases the author did not foresee, and tells a later editor why the precedent exists.
-- Pro: The example anchors the statement to code from the target stack.
-- Con: Longer than rules, and the outcome is probabilistic, so it has to be measured by the eval ([0008](0008-eval-corpus-and-judge.md)).
+- Pro: The reason lets the reviewer generalize, and tells a later editor why the precedent exists.
+- Pro: Same style as the upstream defaults, so the combined filter text reads as one document.
+- Con: Longer than rules, and the outcome is probabilistic, so it has to be measured ([0008](0008-eval-corpus-and-judge.md)).
 
 ## Decision
 
-Option B, with no regex exclusions. Each precedent in `policy/` has an `id`, a `statement`, a `reason` and an `example`. `python -m sia_review validate-policy` fails if any of the four is missing or if an id is duplicated. Findings cite the precedent ids they relied on (`precedent_ids`), so a disputed finding leads back to the precedent that caused it.
+Option B. Every precedent has an `id`, a `statement` and a `reason`, and may have an `example`. The validator fails on a missing statement or reason, or on a duplicate id. The example is optional so that small teams can maintain repo overlays ([0013](0013-policy-layering.md)). Base-policy precedents should include an example.
 
-Precedents describe our architecture, not individual eval cases. Writing a precedent that names a corpus case turns the eval into a memory test. Reviewers of policy changes reject such precedents ([policy authoring guide](../policy-authoring.md)).
+Precedents describe architecture and recurring decisions, not individual eval cases. A precedent that names a corpus case turns the eval into a memory test, and reviewers of policy changes reject it.
+
+The upstream regex exclusions stay active. Turning them off would require a fork ([0002](0002-composite-action-vs-custom-service.md)).
 
 ## Consequences
 
-- Policy changes go through pull requests owned by the security team. They are tested by rerunning the eval before merging.
-- The starter policy describes the synthetic demo app. A company rollout replaces the trust boundaries and the examples, and keeps the structure.
+- A real finding whose text happens to match an exclusion regex is dropped before the policy is consulted. Such drops appear in `excluded_findings_details` with `filter_stage: hard_rules`. The eval reports them as their own miss category, so their effect is measured.
+
+## Future opportunities
+
+- If the eval shows real misses with `filter_stage: hard_rules`, propose an upstream input that disables or narrows the hard exclusions.
+- Feed author feedback from disputed findings ([0009](0009-measuring-precision.md)) into new precedents, with a security-team review of each one.

@@ -22,17 +22,17 @@ Turning on an org-wide required check affects every engineer at once. A noisy re
 
 ## Decision
 
-Option B. The action input `mode` (`shadow` or `comment`) and the org variable `SIA_FAIL_MODE` ([0007](0007-fail-open-vs-fail-closed.md)) are the controls. Each phase has an exit criterion:
+Option B. The wrapper input `comment-pr` (passed to upstream; `false` is shadow mode) and the org variable `SIA_FAIL_MODE` ([0007](0007-fail-open-vs-fail-closed.md)) are the controls. Each phase has an exit criterion:
 
 | Phase | Scope | Settings | Exit criterion |
 |---|---|---|---|
 | 0. Baseline | Eval corpus only | n/a | Corpus contains at least [N] real cases; gate model meets `eval/thresholds.yaml` |
-| 1. Shadow | [pilot repos], ruleset in evaluate mode | `mode: shadow`, `SIA_FAIL_MODE=open` | 2 weeks of findings labelled; precision at least 70% ([0009](0009-measuring-precision.md)) |
-| 2. Comments | [pilot repos], ruleset active | `mode: comment`, `SIA_FAIL_MODE=open` | 2 more weeks at least 70% precision from author feedback; no unresolved runbook incidents |
-| 3. Org-wide | All repos, ruleset active | `mode: comment`, `SIA_FAIL_MODE=open` | Failure rate of the check below [X]% of runs over 2 weeks; manual SIA retired |
+| 1. Shadow | [pilot repos], ruleset in evaluate mode | `comment-pr: false`, `SIA_FAIL_MODE=open` | 2 weeks of findings labelled; precision at least 70% ([0009](0009-measuring-precision.md)) |
+| 2. Comments | [pilot repos], ruleset active | `comment-pr: true`, `SIA_FAIL_MODE=open` | 2 more weeks at least 70% precision from author feedback; no unresolved runbook incidents |
+| 3. Org-wide | All repos, ruleset active | `comment-pr: true`, `SIA_FAIL_MODE=open` | Failure rate of the check below [X]% of runs over 2 weeks; manual SIA retired |
 | 4. Fail closed | All repos | `SIA_FAIL_MODE=closed` | n/a (steady state) |
 
-In shadow mode the action writes findings to the job summary and the result artifact, and posts nothing on the PR. The manual SIA keeps running until the exit of phase 3.
+In shadow mode the wrapper writes findings to the job summary, upstream uploads its result artifact, and nothing is posted on the PR. The wrapper reads `comment-pr` from the org variable `SIA_COMMENT_PR`, so phases change without editing workflows. The manual SIA keeps running until the exit of phase 3.
 
 ## Consequences
 

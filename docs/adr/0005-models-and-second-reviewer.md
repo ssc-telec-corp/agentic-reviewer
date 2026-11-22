@@ -1,4 +1,4 @@
-# 0005. Models: Opus reviewer with adjudication; a second Anthropic reviewer is measured, not deployed
+# 0005. Models: one Anthropic model per run; second reviewer and adjudication are future options
 
 - Status: Proposed
 - Date: 2026-11-22
@@ -6,41 +6,38 @@
 
 ## Context
 
-The reference design runs two reviewers from different vendors on every PR and posts the union of their findings, because different models miss different bugs. A third pass, the adjudicator, re-examines the candidates the reviewer talked itself out of. Our company uses only Anthropic models, so vendor diversity is not available. The diversity we can get comes from model size (Opus vs Sonnet), effort level, and prompt.
+The reference design runs two reviewers from different vendors on every PR and posts the union, because different models miss different bugs. It also adds an adjudicator that re-examines the candidates the reviewer dropped. Our company uses only Anthropic models.
+
+In the upstream action, a single input, `claude-model`, sets the model for both the Claude Code find stage and the Messages API filter. Its default is `claude-opus-4-1-20250805`. There is no fallback model and no adjudication.
 
 ## Considered options
 
-### Option A: One reviewer, no adjudication
+### Option A: One model for find and filter, set through `claude-model`
 
-- Pro: Cheapest and fastest.
-- Con: Candidates the model dismisses as "pre-existing" or "low confidence" are lost. Those self-dismissals are exactly what adjudication is meant to catch.
+- Pro: Supported by the upstream action as it is.
+- Con: Find and filter share the same model's blind spots.
 
-### Option B: One reviewer (Opus) plus an adjudication pass over its dropped candidates
+### Option B: Run the upstream action twice per PR with different models (Opus and Sonnet)
 
-- Pro: Adjudication runs only when the reviewer dropped something, so it adds cost only on those PRs.
-- Pro: The reviewer must report dropped candidates in structured form, which also explains misses in the eval ([0008](0008-eval-corpus-and-judge.md)).
-- Con: Both passes share the same model's blind spots.
+- Pro: Some model diversity without a fork.
+- Con: Twice the cost. The two runs post separately, and the upstream duplicate check would suppress the second run's inline comments.
 
-### Option C: Option B plus a second reviewer on a different Anthropic model (Sonnet), posting the union
+### Option C: Add an adjudication step after the upstream action over `excluded_findings_details`
 
-- Pro: Some model diversity.
-- Con: About twice the cost per PR, and more false positives, since the union adds both models' errors.
-- Con: The benefit is unknown until the eval measures how often Sonnet catches what Opus misses.
+- Pro: Recovers true findings that the filter talked itself out of. The reference design reports about a 30% relative recall gain from adjudication on known-bad commits.
+- Con: Needs a model call outside the upstream action, which means code we own.
 
 ## Decision
 
-Option B in the action. The reviewer runs `claude-opus-5-5` at effort `high`. The adjudicator runs the same model, with the same policy and tools, only on dropped candidates. Model IDs are pinned in `action/action.yml` inputs.
-
-The eval harness runs every case on both `claude-opus-5-5` and `claude-sonnet-5-5`. It reports per-model recall and union recall, which is the data needed to decide on Option C.
-
-Failover: `claude --fallback-model claude-sonnet-5-5` handles overload of the primary model, and the reviewer retries a failed pass once ([0007](0007-fail-open-vs-fail-closed.md)).
+Option A, with `claude-model: claude-opus-5-5`. The eval harness runs every corpus case on both `claude-opus-5-5` and `claude-sonnet-5-5`. It reports each model's recall and false positives, and the recall of their union. Those numbers are what Options B and C need before anyone builds them.
 
 ## Consequences
 
-- When the action falls back to Sonnet, the run's quality is the Sonnet number from the eval report, not the Opus number. The summary comment states which model produced the result.
-- Changing the model ID is a policy-level change and requires an eval rerun ([0008](0008-eval-corpus-and-judge.md)).
+- There is no automatic fallback model. When Opus is unavailable, the scan errors and the fail-mode rule in [0007](0007-fail-open-vs-fail-closed.md) applies.
+- Changing `claude-model` requires an eval run ([0008](0008-eval-corpus-and-judge.md)).
 
-## Open questions
+## Future opportunities
 
-- [decide: adopt Option C if union recall on the corpus exceeds Opus recall by at least [X] cases while union false positives stay within the threshold in [0008](0008-eval-corpus-and-judge.md). The POC numbers are in `docs/design.md` section 10. A corpus of 36 synthetic cases is too small to settle this; it needs real cases.]
-- [decide: effort `high` vs `xhigh` for the primary reviewer. Not measured in the POC.]
+- **Adjudication (Option C).** Build it first if the eval shows misses classified as "dropped by filter".
+- **Second reviewer (Option B).** Adopt it if union recall beats Opus recall by at least [X] cases while union false positives stay within the threshold. A 37-case synthetic corpus is too small to decide this, so it needs real cases.
+- **Fallback model.** Retry the upstream step with `claude-sonnet-5-5` when the first attempt errors. This is a wrapper step, not a fork.

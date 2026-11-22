@@ -2,45 +2,45 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0004](0004-precedents-vs-rules.md), [0005](0005-models-and-second-reviewer.md), [0009](0009-measuring-precision.md)
+- Related: [0002](0002-composite-action-vs-custom-service.md), [0004](0004-precedents-vs-rules.md), [0013](0013-policy-layering.md)
 
 ## Context
 
-In the manual SIA process, the engineer picks the criteria that apply: Authorization, Authentication, Network, UI/frontend, Significant change, Data handling/PII, Secrets/crypto, Third-party dependencies, and Infrastructure as code. One proposal moves that selection into an LLM classifier that runs before the review. The classifier would label the PR with criteria and use the labels to choose the instructions, the model, or whether the deep review runs at all.
+In the manual SIA process, the engineer picks the criteria that apply: Authorization, Authentication, Network, UI/frontend, Significant change, Data handling/PII, Secrets/crypto, Third-party dependencies, and Infrastructure as code. One proposal is to move that choice into an LLM classifier that runs before the review and labels the PR. The labels would then choose the instructions, the model, or whether the deep review runs at all.
 
-Two facts shape the choice. First, a misrouted PR is a silent miss. If the classifier says "frontend only" and the change also weakens an authorization check, the deep review never sees the authorization precedents. Second, the review cost has to be measured before a cost argument for skipping it can be made. The POC measures it per case ([eval report](../../eval/reports/latest/report.md)).
+A misrouted PR is a silent miss. If the classifier says "frontend only" and the change also weakens an authorization check, the review never sees the authorization precedents.
+
+The upstream action takes one set of scan instructions and one set of filtering instructions per run. It has no notion of routing.
 
 ## Considered options
 
 ### Option A: LLM classifier as a gate
 
-- Pro: Cheap PRs (docs, copy changes) could skip the deep review.
-- Pro: The prompt for each PR is shorter, since it carries only the selected criteria's precedents.
-- Con: Recall is capped by classifier recall. Every classifier miss is a review miss, and the eval would have to measure two models instead of one.
-- Con: It adds a second prompt, a second model call and a second failure mode to the required check.
+- Pro: Trivial PRs could skip the deep review.
+- Con: Recall is capped by the classifier's recall, and the required check gains a second model call that can fail.
 
-### Option B: Classifier that only selects instructions, while every PR still gets the deep review
+### Option B: Classifier that selects which policy sections to send
 
-- Pro: The prompt is shorter than Option C's.
-- Con: It has the same misrouting problem for the precedents that get left out. The token saving is small, because the whole policy is about 5,000 words.
+- Pro: Shorter instruction files.
+- Con: The same misrouting problem for the left-out precedents. The saving is small, since the whole base policy is a few thousand words.
 
-### Option C: Single shared policy; the reviewer reports the criteria it touched
+### Option C: Single policy; the reviewer labels each finding with its criterion
 
-- Pro: One prompt and one model call carry every precedent, so there is no routing error.
-- Pro: The reviewer returns `criteria_touched` with a one-line reason for each. That is the SIA record the ticket used to hold, at no extra cost.
-- Con: Every PR pays for the full policy in its prompt, and prompt caching reduces only part of that.
+- Pro: Every PR gets every precedent, so there is no routing error.
+- Pro: It fits the upstream inputs as they are.
+- Con: A PR with no findings records nothing about which criteria it touched. The upstream output schema has no field for that.
 
 ## Decision
 
-Option C. `policy/criteria/*.yaml` holds one section per criterion, and the reviewer prompt includes all of them. The review output's `criteria_touched` field records which criteria the change touched. The eval harness reports how often `criteria_touched` agrees with the corpus labels. That gives the measurement a classifier would have produced, without the gate.
+Option C. The rendered scan instructions list the nine criteria with their ids. They tell the reviewer to set each finding's `category` to the criterion id, and the PR summary groups findings by `category`.
 
-Deliverable 4 (`classifier/`) is not built.
+Deliverable 4 (`classifier/`) is not built. The eval reports how often a matched finding's `category` equals the case's expected criterion.
 
 ## Consequences
 
-- The PR summary comment lists the criteria touched and why, which replaces the SIA ticket's criteria checkboxes.
-- Criterion labels have no effect on whether a finding is reported. A finding outside the labelled criteria is still posted.
+- The SIA record that the ticket's checkboxes used to hold is complete only for PRs with findings. For PRs without findings, it says only "reviewed, no findings".
 
-## Open questions
+## Future opportunities
 
-- [decide: whether to skip the review for PRs that change only non-code paths (for example `*.md` or `docs/**`), using a deterministic path rule rather than an LLM. Needs production data on the share of such PRs and their review cost.]
+- **Criteria labeller, not a gate.** A cheap model call (Haiku or Sonnet) that labels every PR with the criteria touched, run in parallel with the review and never deciding whether the review runs. It fills the SIA-record gap above. Build it if auditors need per-PR criteria for PRs without findings.
+- **Deterministic skip** for PRs that change only `*.md` or `docs/**`, using a path rule rather than a model. This needs production data on how common such PRs are and what they cost.

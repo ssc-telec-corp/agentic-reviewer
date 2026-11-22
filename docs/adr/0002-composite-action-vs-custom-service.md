@@ -1,47 +1,65 @@
-# 0002. Composite action with an in-house reviewer, not a wrapper and not a service
+# 0002. Wrap `claude-code-security-review` in a composite action
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0003](0003-classifier-vs-single-policy.md), [0005](0005-models-and-second-reviewer.md), [0008](0008-eval-corpus-and-judge.md), [0012](0012-local-vs-ci-authentication.md)
+- Related: [0005](0005-models-and-second-reviewer.md), [0007](0007-fail-open-vs-fail-closed.md), [0008](0008-eval-corpus-and-judge.md), [0011](0011-fork-prs-and-untrusted-content.md), [0012](0012-local-vs-ci-authentication.md), [0013](0013-policy-layering.md)
 
 ## Context
 
-The starting point was `anthropics/claude-code-security-review` (reviewed at commit `0c6a49f`), a composite GitHub Action. It runs Claude Code headless on a pull request diff to find candidates, removes candidates with regex hard exclusions, and then sends each remaining finding to the Messages API to filter false positives. Reading its source shows four properties that conflict with our requirements:
+The SIA review has to use Anthropic's `claude-code-security-review` action (reviewed at commit `0c6a49f`, 2026-02-11, the head of `main` when checked). It is a composite action. It fetches the PR and its diff from the GitHub API, runs Claude Code headless on the checkout to find candidates, drops candidates with regex hard exclusions, sends each remaining candidate to the Messages API for false-positive filtering, and posts the survivors as inline review comments. Two inputs let a caller add instructions: `custom-security-scan-instructions` is appended to the find prompt, and `false-positive-filtering-instructions` replaces the filter's default instructions.
 
-1. **It is bound to a GitHub pull request.** `github_action_audit.py` fetches the PR metadata and diff from the GitHub API using `GITHUB_TOKEN` and `PR_NUMBER`. The eval corpus ([0008](0008-eval-corpus-and-judge.md)) is a list of commits, so the eval harness cannot run the same reviewer without first opening a PR for every case.
-2. **It requires an API key.** The filter stage calls the Messages API through the `anthropic` SDK with `ANTHROPIC_API_KEY`. Development is on a subscription login ([0012](0012-local-vs-ci-authentication.md)).
-3. **By default it reviews only the first commit of a PR.** A cache marker disables later runs, and the comment script skips posting if any earlier bot security comment exists. A required check needs a result on every head commit.
-4. **It discards dropped candidates.** Candidates removed by the filter appear only in the results file and are never re-examined. The adjudication pass ([0005](0005-models-and-second-reviewer.md)) needs them as structured input.
+Reading the source showed behaviour that the SIA use case has to work around:
+
+1. On an error, the scan step writes `{"error": ...}` and reports `findings_count=0`, and the job still passes. A model outage therefore looks like a clean review.
+2. The filter's startup check calls the hard-coded model `claude-3-5-haiku-20241022`. If that call fails, the filter turns itself off with a log warning, and every candidate is posted unfiltered. Whether that model still answers is Unknown. It is the first thing to verify ([0012](0012-local-vs-ci-authentication.md)).
+3. By default it reviews only the first commit of a PR (`run-every-commit: false`). Separately, its comment script posts nothing if any earlier bot security comment exists on the PR.
+4. It installs `@anthropic-ai/claude-code` from npm without a version pin.
+5. The scan step holds `GITHUB_TOKEN` and the model credential in the same environment as Claude Code ([0011](0011-fork-prs-and-untrusted-content.md)).
 
 ## Considered options
 
-### Option A: Wrap the upstream action unchanged and pass our policy through its two instruction-file inputs
+### Option A: Composite action that wraps the upstream action at a pinned commit
 
-- Pro: No reviewer code to maintain.
-- Con: Fails requirements 1 to 4 above. The eval would measure a different reviewer than the one in CI.
+- Pro: Uses the reviewer the task specifies, with nothing removed. Upstream fixes arrive by bumping one SHA.
+- Pro: Instructions enter only through the two supported inputs, so the upstream code stays untouched.
+- Con: Items 3 to 5 can only be worked around in the wrapper's own steps, not fixed.
 
 ### Option B: Fork the upstream action
 
-- Pro: Keeps its tests and comment script.
-- Con: Requirements 1, 2 and 4 mean rewriting the orchestrator, the filter client and the prompt, which leaves little of the original. Rebasing on upstream changes becomes a manual merge.
+- Pro: All five items can be fixed.
+- Con: We own a diverging copy, and every upstream change becomes a manual merge.
 
-### Option C: A composite action whose reviewer is a small in-house Python package that calls Claude Code headless
+### Option C: In-house reviewer that calls Claude Code headless (`claude -p`) directly
 
-- Pro: The same `sia_review` package runs from the eval harness (input: a git tree and a diff) and from the action (input: a PR checkout). One code path is measured and deployed.
-- Pro: Every model call goes through the `claude` CLI, so a subscription login, an OAuth token and an API key all work ([0012](0012-local-vs-ci-authentication.md)).
-- Con: About 600 lines of Python that we own.
+- Pro: Full control of prompt, tools, passes and authentication. This is the route the reference design (Figma) took after starting from this action.
+- Con: The upstream prompt, filter instructions and regex exclusions all have to be ported and then kept in sync by hand. It also does not meet the requirement to use the security reviewer.
 
-### Option D: A custom review service (webhook receiver plus job queue)
+### Option D: Custom review service (GitHub App plus job queue)
 
-- Pro: Central retries, telemetry and cross-repo state such as fix tracking.
-- Con: Needs hosting, a GitHub App and on-call for the service itself. None of that is needed to show whether review quality meets the bar.
+- Pro: Central retries, telemetry and state across PRs.
+- Con: Hosting and on-call for a service, none of which is needed to show review quality.
 
 ## Decision
 
-Option C. The action in `action/` runs `python -m sia_review review` and then `python -m sia_review post`. It keeps the upstream design ideas: a find pass followed by a skeptical pass, a JSON finding schema, precedents supplied as text, inline review comments with reaction buttons for feedback. It does not call or vendor upstream code. It drops the regex hard exclusions ([0004](0004-precedents-vs-rules.md)).
+Option A. `action/action.yml` is a composite action with these steps:
+
+1. Refuse fork PRs ([0011](0011-fork-prs-and-untrusted-content.md)).
+2. Render the policy ([0013](0013-policy-layering.md)) into the two instruction files.
+3. Remove agent configuration files (`.claude/`, `CLAUDE.md`, `.mcp.json`) from the checked-out working tree ([0011](0011-fork-prs-and-untrusted-content.md)).
+4. Call `anthropics/claude-code-security-review@0c6a49f...` with `run-every-commit: true`, a current `claude-model`, and the rendered files.
+5. Verify the outcome. The step reads `claudecode-results.json` and `claudecode-error.log`, and fails the check if the scan errored or if the filter disabled itself ([0007](0007-fail-open-vs-fail-closed.md)).
+6. Write every kept finding to the job summary. This is done because item 3 can suppress inline comments on later pushes.
+
+The eval harness ([0008](0008-eval-corpus-and-judge.md)) runs the upstream `main()` at the same SHA, replacing only the two methods that fetch PR data from GitHub.
 
 ## Consequences
 
-- Deliverable 1 changes from "wraps `claude-code-security-review`" to "replaces it with an action built on the same design."
-- Without a service there is no central state. Telemetry is limited to job summaries and result artifacts, and fix tracking is not built ([0009](0009-measuring-precision.md)).
-- Revisit Option D when org-wide telemetry or cross-PR state becomes a requirement, or when the number of required-check runs makes per-job setup time (installing Node and Python packages) a cost.
+- Upstream is pinned by SHA, so a bump is a reviewed PR that includes an eval run.
+- The unpinned Claude Code npm install inside upstream remains. The Claude Code version can change between runs without a diff on our side.
+
+## Future opportunities
+
+- **Adjudication pass.** Upstream writes dropped candidates to `filtering_summary.excluded_findings_details`. A wrapper step after the upstream action could re-examine them ([0005](0005-models-and-second-reviewer.md)) without forking.
+- **Upstream contributions** for items 1 to 4: a non-zero exit on scan error, a configurable or removed validation model, posting new findings on later pushes, and a pinned Claude Code version. Each one merged upstream deletes a workaround here.
+- **Option C as a measured alternative.** The harness can run a headless variant with the same policy next to the upstream pipeline on the same corpus. Switch only if the eval shows higher recall at the same false-positive ceiling.
+- **Option D** when org-wide telemetry, fix tracking or cross-PR state becomes a requirement.

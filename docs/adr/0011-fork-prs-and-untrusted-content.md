@@ -6,51 +6,57 @@
 
 ## Context
 
-Everything in a PR is attacker-controlled from the reviewer's point of view: code, comments, file names, the title and the description. The workflow holds two credentials: the model credential, and a `GITHUB_TOKEN` that can write PR comments. The upstream action states that it is not hardened against prompt injection, and should run only on trusted PRs.
+Everything in a PR is attacker-controlled from the reviewer's point of view: code, comments, file names, title and description. The upstream README says the action is not hardened against prompt injection and should run only on trusted PRs. From its source:
 
-Three threats are specific to this system:
+- Claude Code runs with its default tool set in the PR checkout. The only tool explicitly disallowed is `Bash(ps:*)`.
+- The scan step's environment holds both `ANTHROPIC_API_KEY` and `GITHUB_TOKEN`.
+- Claude Code runs in the checkout's root directory. In non-interactive mode it skips the workspace trust prompt. A `CLAUDE.md` or `.claude/settings.json` added by the PR would therefore probably be loaded. That is an assumption, not tested against the action.
 
-1. PR content steers the reviewer into suppressing a finding, which hides the author's own bug.
-2. PR content steers the reviewer into running commands or reading credentials. For example, a PR adds a `CLAUDE.md` or a `.claude/settings.json` hook to the reviewed tree.
-3. PR content gets the bot to post attacker-chosen text, such as links or @mentions.
+The threats specific to this system are:
 
-GitHub does not pass repository secrets to `pull_request` runs from forks. The `pull_request_target` trigger does pass them, and it runs with the base repository's token.
+1. PR content steers the reviewer into suppressing a finding.
+2. PR content changes the reviewer's configuration, for example with a project settings file that allows Bash, and so reaches the credentials in the environment.
+3. PR content gets the bot to post attacker-chosen text.
+
+GitHub does not pass secrets to `pull_request` runs from forks. `pull_request_target` does, and runs with a write token.
 
 ## Considered options
 
-### Option A: Run the reviewer with default Claude Code tools and both credentials in one step
+### Option A: Run upstream as documented
 
-- Con: Bash access plus a token in the environment lets threat 2 exfiltrate the token.
+- Con: Threat 2 is open for any PR author.
 
-### Option B: Least privilege per step
+### Option B: Wrapper mitigations around the unmodified upstream action
 
-- Pro: Threat 2 has nothing to reach. The reviewer step holds only the model credential and has no shell. The post step holds only `GITHUB_TOKEN` and runs no model.
-- Con: Threat 1 is not solved. A prompt-injected reviewer can still under-report.
+- Pro: Closes the configuration path for threat 2 without a fork.
+- Con: The upstream step still holds both credentials, and Claude Code still has its default read tools.
 
-### Fork PRs: Option F1 `pull_request_target`
+### Option C: Fork and run Claude Code with `--restricted --safe-mode --tools Read,Grep,Glob`
 
-- Con: Gives untrusted code a write token and secrets. Rejected.
+- Pro: The strongest isolation. A local test showed a planted `CLAUDE.md` was not followed under `--restricted`.
+- Con: It is a fork ([0002](0002-composite-action-vs-custom-service.md)).
 
-### Fork PRs: Option F2 fail the check with instructions to push a branch to the repo
+### Fork PRs
 
-- Pro: No secret exposure.
-- Con: Blocks fork-based workflows, which is friction for anyone who uses forks.
+- F1, `pull_request_target`: gives untrusted code secrets and a write token. Rejected.
+- F2: fail the check with instructions to push a branch to the repository.
 
 ## Decision
 
-Option B and Option F2.
+Option B and F2.
 
-- The reviewer runs `claude -p` with `--restricted --safe-mode --strict-mcp-config --tools Read,Grep,Glob --no-session-persistence`. `--restricted` removes the tools that run code and WebFetch, ignores project settings files, and confines file tools to the working directory. `--safe-mode` disables CLAUDE.md, hooks, skills and MCP servers. A local test confirmed that a `CLAUDE.md` in the reviewed tree was not followed with `--restricted`. That was one test, and repeating it is part of the eval suite.
-- The working directory is a temporary export of the reviewed path at the head commit. It has no `.git` directory and no workflow files.
-- PR title, body and refs are read in Python from the event payload. They are never interpolated into shell commands.
-- The model's output must match a JSON schema (`--json-schema`). The post step writes only schema fields into a fixed comment template, and breaks @mentions by inserting a zero-width space after every `@`.
-- The prompt states that PR content is data and that instructions inside it are to be reported, not followed. This mitigates threat 1 without solving it. Human code review of the PR remains the control.
-- PRs whose head repository differs from the base repository fail the check with a message explaining how to push a branch instead.
+- Before the upstream step, the wrapper deletes `.claude/`, every `CLAUDE.md`, and `.mcp.json` from the checked-out working tree. The diff that the reviewer receives from the GitHub API still shows changes to those files, so they are still reviewed as content.
+- Workflow permissions are `contents: read` and `pull-requests: write`, and nothing more.
+- PR title, body and refs never pass through `${{ }}` into shell. The wrapper reads them from `$GITHUB_EVENT_PATH` in Python.
+- The rendered policy includes the precedent that code comments and PR text are data, and that a claim of prior approval does not suppress a finding. This reduces threat 1 without solving it. Human code review remains the control.
+- PRs whose head repository differs from the base repository fail the check with a message.
 
 ## Consequences
 
-- An insider who prompt-injects the reviewer can hide a bug from it. The human reviewer of the PR still sees the injected text.
+- Residual risk: a PR that prompt-injects the reviewer can hide its own bug, and Claude Code shares the scan step's environment with `GITHUB_TOKEN`. The token's scope is limited to the current repository, with the permissions above.
 
-## Open questions
+## Future opportunities
 
-- [decide: whether forking is disabled org-wide, in which case F2 never fires, or whether fork PRs need a reviewed path, such as a maintainer pushing the branch.]
+- Upstream contribution or fork for Option C: restricted tools, and separate steps for the model and GitHub credentials.
+- An eval case for prompt injection exists in the corpus. Keep it in the gate set so that a regression in threat 1 shows as a recall drop.
+- [decide: whether forking is disabled org-wide, which makes F2 moot.]

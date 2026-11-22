@@ -1,50 +1,52 @@
-# 0012. Authentication: every model call goes through the Claude Code CLI
+# 0012. Authentication: API key in every mode
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0002](0002-composite-action-vs-custom-service.md), [0011](0011-fork-prs-and-untrusted-content.md)
+- Related: [0002](0002-composite-action-vs-custom-service.md), [0008](0008-eval-corpus-and-judge.md), [0011](0011-fork-prs-and-untrusted-content.md)
 
 ## Context
 
-The POC was built and measured with a personal Claude subscription and no company credentials. Production will use company credentials. The reviewer, the adjudicator and the eval judge all need to call a model, both locally and in GitHub Actions.
+The POC is built on a personal machine with a personal Claude subscription and no company credentials. Production uses company credentials. Facts from the upstream source and local tests:
 
-Checked facts:
+- `validate_claude_available()` in upstream exits unless `ANTHROPIC_API_KEY` is set, before Claude Code runs. The action cannot run on subscription credentials, even for the find stage.
+- The filter calls the Messages API through the `anthropic` SDK with that key.
+- The filter's startup check calls `claude-3-5-haiku-20241022`. If the call fails, filtering is disabled silently ([0002](0002-composite-action-vs-custom-service.md)).
+- Claude Code 2.1.311 headless reports `total_cost_usd` at list price, on either a subscription or an API key.
 
-- The upstream action's filter stage calls the Messages API through the `anthropic` SDK. It can only authenticate with an API key, so it cannot use a subscription.
-- Claude Code 2.1.311 in headless mode (`claude -p`) runs on the local subscription login. It reports `total_cost_usd` with `costBasis: list`, which is the list-price equivalent rather than an amount billed.
-- `claude --bare` ignores OAuth and keychain credentials and accepts only `ANTHROPIC_API_KEY`. The reviewer therefore does not use `--bare`.
-- `claude setup-token` creates a long-lived token for a subscription account.
+Assumptions to verify:
 
-Assumptions not yet verified:
-
-- **A1.** In GitHub Actions, Claude Code authenticates with the token from `claude setup-token` when it is supplied as `CLAUDE_CODE_OAUTH_TOKEN`. Verify by running the CI eval workflow.
-- **A2.** Subscription terms allow this automated use for a personal proof of concept. Verify against the current consumer terms before running the CI workflows. It is not a production option either way.
-- **A3.** When both `ANTHROPIC_API_KEY` and `CLAUDE_CODE_OAUTH_TOKEN` are set, which one wins is Unknown. The action sets only one.
+- **A1.** `claude-3-5-haiku-20241022` still answers on the Messages API. Verify on the first eval run. The wrapper's verify step and the harness both fail loudly if it does not.
+- **A2.** When Claude Code has both a subscription login and `ANTHROPIC_API_KEY`, it uses the key. The harness sets the key explicitly.
 
 ## Considered options
 
-### Option A: Messages API with an API key everywhere
+### Option A: API key everywhere
 
-- Con: The POC could not run locally on a subscription.
+- Pro: The only way to run the upstream pipeline unmodified, locally and in CI. POC and production differ only in which key.
+- Con: The POC needs a personal Console key with billing, separate from the subscription.
 
-### Option B: Every model call goes through `claude -p`, and credentials come from the environment
+### Option B: Subscription locally, API key in CI
 
-- Pro: The same code authenticates with a local login, an OAuth token or an API key. No code changes between POC and production.
-- Con: Each call has Claude Code start-up time and a Node.js dependency.
+- Con: Locally, upstream refuses to start. Patching that check out in the harness would measure a pipeline that differs from CI.
 
 ## Decision
 
-Option B.
+Option A.
 
-| Mode | Credential | Where it comes from |
+| Mode | Credential | Source |
 |---|---|---|
-| Local eval (POC) | Subscription login | `claude` interactive login on the developer machine |
-| CI eval and PR review (POC) | `CLAUDE_CODE_OAUTH_TOKEN` (A1, A2) | GitHub secret in the POC repository |
-| Production | `ANTHROPIC_API_KEY` | Organization secret holding a key from the company Anthropic Console org [org-name], in a workspace with a spend limit [budget] |
+| Local eval (POC) | `ANTHROPIC_API_KEY` | A personal Anthropic Console key with a spend limit of [budget], exported in the shell |
+| CI eval and PR review (POC) | `ANTHROPIC_API_KEY` | A repository secret in the POC repo |
+| Production | `ANTHROPIC_API_KEY` | An organization secret from the company Console org [org-name], in a workspace dedicated to the SIA review with spend limit [budget] |
 
-The action accepts either `anthropic-api-key` or `claude-code-oauth-token` as an input, and fails if both or neither are set (A3).
+The eval judge also uses the key, through the same `anthropic` SDK version that upstream pins in its requirements, so cost accounting and authentication are the same for every model call.
 
 ## Consequences
 
-- Moving to production means creating the Console workspace and key, storing it as an org secret visible to all repos covered by the ruleset, and removing the OAuth token secret.
-- Cost numbers from the POC are list-price equivalents, and production billing at list price should match them. Any negotiated pricing is Unknown.
+- Moving to production means creating the Console workspace and key, storing it as an org secret visible to every repo covered by the ruleset, and setting the spend alert in the [runbook](../runbook.md).
+- POC cost numbers are list-price figures from Claude Code, plus token-count estimates for the filter calls. Negotiated pricing is Unknown.
+
+## Future opportunities
+
+- Workload identity, if Anthropic offers OIDC-based credentials for GitHub Actions. Unknown whether it does.
+- A headless variant ([0002](0002-composite-action-vs-custom-service.md)) could run on subscription credentials for individual developers' local pre-PR checks.

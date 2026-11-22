@@ -1,0 +1,17 @@
+id: authorization
+name: Authorization
+touches: Endpoints, route registration, authorization policies or handlers, role checks, ownership checks.
+precedents:
+  - id: AUTHZ-EVERY-ENDPOINT
+    statement: Every new endpoint must be covered by an authorization check that matches its audience. An endpoint that acts on another user's data or account needs a privileged role, not just authentication.
+    reason: A missing or too-weak check at registration time is the most common way an endpoint becomes reachable by the wrong users.
+    example: A support endpoint that resets any user's password but only requires a logged-in user is a finding.
+  - id: AUTHZ-OBJECT-OWNERSHIP
+    statement: Any handler that reads, changes or deletes a resource by id must check that the caller owns it or was granted access. That holds even if ids are random, because ids leak through URLs and logs.
+    reason: Possessing an id is not proof of access.
+  - id: AUTHZ-SHARED-POLICY-LOGIC
+    statement: Changes to shared authorization logic (policy definitions, handlers, middleware) must keep the same decision for every caller. Logic that succeeds for any authenticated user, matches roles by substring, or treats "has some role" as "has this role" is a finding.
+    reason: One handler change silently widens every endpoint that uses the policy, without touching any endpoint file.
+  - id: AUTHZ-CLIENT-SIDE
+    statement: Missing checks in browser or mobile client code are not findings. The server must enforce every check.
+    reason: The client is under the attacker's control.

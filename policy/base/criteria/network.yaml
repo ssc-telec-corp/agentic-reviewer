@@ -1,0 +1,17 @@
+id: network
+name: Network changes
+touches: CORS, outbound HTTP, listening addresses, trusted proxies and forwarded headers, IP-based restrictions, network settings in config.
+precedents:
+  - id: NET-OUTBOUND-USER-URLS
+    statement: Requests to user-influenced URLs must go through the service's allowlisted outbound client, if it has one, or be restricted to https and an exact host allowlist with redirects off. A plain HTTP client fetching a user-supplied URL is a finding.
+    reason: Service workloads can reach internal networks and cloud metadata endpoints, so an unrestricted fetch is SSRF.
+    example: Adding a public https host to an existing allowlist is not a finding.
+  - id: NET-CORS
+    statement: CORS with credentials must list exact origins. Reflecting the request origin, allowing any origin, or wildcard subdomains together with credentials is a finding.
+    reason: Credentialed CORS to any origin lets any website read the API as the logged-in user.
+  - id: NET-FORWARDED-HEADERS
+    statement: Forwarded headers may be trusted only from known proxy addresses. Trusting them from any source is a finding when code uses the client IP for access control.
+    reason: Anyone can set X-Forwarded-For. Trusting it from any client turns IP restrictions into a header the attacker chooses.
+  - id: NET-CONTAINER-LISTEN
+    statement: A containerized service that listens on 0.0.0.0 is not a finding. Exposure is decided by the deployment's network configuration.
+    reason: Containers must listen on all interfaces to receive traffic from the pod network.

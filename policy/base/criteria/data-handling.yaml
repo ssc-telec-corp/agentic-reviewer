@@ -1,0 +1,13 @@
+id: data-handling
+name: Data handling / PII
+touches: Response models, serialization, logging, exports, or changes to which personal data is stored, returned or recorded.
+precedents:
+  - id: DATA-EXPLICIT-RESPONSES
+    statement: Responses must use explicit response models. Returning storage entities directly, or a mapper that copies every field by default, is a finding when the entity has fields the caller must not see.
+    reason: Entities gain fields over time, and an entity-based response silently starts exposing each new one.
+  - id: DATA-LOGGING
+    statement: Logging passwords, tokens, cookies, Authorization headers or full request bodies is a finding. Logging ids, paths, status codes and non-secret metadata is not.
+    reason: Logs are readable by more people than production data is, and are kept for [retention period].
+  - id: DATA-BULK-EXPORT
+    statement: Bulk exports of personal data need an admin-level check and must contain only the fields of the export model.
+    reason: An export is many responses at once, with the same exposure rules.

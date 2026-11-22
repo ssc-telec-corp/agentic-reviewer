@@ -1,0 +1,42 @@
+# Repository overlay for the SIA review. Read from the PR's base branch.
+# Changes need approval from [security-team] (see CODEOWNERS).
+# Format: docs/policy-authoring.md.
+version: 1
+
+system: |
+  demo-app/ is a notes service: ASP.NET Core 10 minimal APIs, in-memory store,
+  static frontend in wwwroot/, Dockerfile, Kubernetes manifests in deploy/.
+  It runs in namespace `notes` behind the ingress controller in namespace
+  `ingress-nginx`, which terminates TLS and is the only proxy, at 10.20.0.10.
+  The frontend authenticates with the HttpOnly `session` cookie; API clients
+  send the same JWT as a bearer header.
+
+trust_boundaries:
+  - id: TB-ROLES
+    description: Roles are user, support and admin. Only admin may list users or change roles. Support may act on other users' accounts only through endpoints that require the support policy.
+
+precedents:
+  - id: DEMO-NO-FALLBACK-POLICY
+    criterion: authorization
+    statement: Policies.cs sets no fallback authorization policy, so an endpoint is anonymous unless its route group calls RequireAuthorization.
+    reason: The route group is the only place where authorization is declared in this service.
+  - id: DEMO-OUTBOUND-CLIENT
+    criterion: network
+    statement: OutboundClient is the service's allowlisted outbound client (https, default port, exact host match against Network:Outbound:AllowedHosts, no redirects).
+    reason: The pods can reach the cluster network and 169.254.169.254.
+  - id: DEMO-INTERNAL-BY-IP
+    criterion: network
+    statement: /internal/* allows callers by RemoteIpAddress within Network:InternalNetworks. Its safety depends on KnownProxies containing only the ingress address.
+    reason: Forwarded headers decide RemoteIpAddress.
+  - id: DEMO-CSP
+    criterion: frontend
+    statement: SecurityHeaders.cs sets the CSP for the whole app. Notes and display names are shared between users.
+    reason: Notes and display names are the user-controlled text that the frontend renders.
+  - id: DEMO-SIGNING-KEY
+    criterion: secrets-crypto
+    statement: The JWT signing key comes only from DEMOAPP_JWT_KEY, which deploy/deployment.yaml injects from a Kubernetes secret. SigningKey.Load throws when it is missing.
+    reason: Anyone with the key can mint admin tokens.
+  - id: DEMO-NUGET
+    criterion: dependencies
+    statement: nuget.config clears the sources and maps "*" to nuget.org. This service has no internal feed.
+    reason: Any additional feed is outside the approved sources.
