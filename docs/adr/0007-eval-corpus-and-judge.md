@@ -6,7 +6,7 @@
 
 ## Context
 
-Policy, model and upstream-version changes alter review quality in ways that cannot be predicted from the diff. Regressions need a labelled set of changes with known outcomes that can be rerun on a schedule. The POC builds the corpus from synthetic changes against a demo app. Production will use real vulnerabilities found by bug bounty, incidents and audits, each traced to the commit that introduced it, with the same schema and harness.
+Policy, model and upstream-version changes alter review quality in ways that cannot be predicted from the diff. Regressions need a labelled set of changes with known outcomes that can be rerun on a schedule. The proof of concept (POC) builds the corpus from synthetic changes against a demo app. Production will use real vulnerabilities found by bug bounty, incidents and audits, each traced to the commit that introduced it, with the same schema and harness.
 
 The upstream action gets its PR data from the GitHub API, and has its own eval tool (`claudecode/evals/`) that runs on one GitHub PR and prints findings without grading them. Corpus cases are commits, not PRs.
 
@@ -38,7 +38,7 @@ Option B, with an LLM judge for vulnerable cases.
 - **Isolation.** The harness exports only the reviewed path at the head ref into a temporary directory. Claude Code runs there, so it cannot read the corpus, the policy or other branches.
 - **Judge.** `claude-sonnet-5-5`, with no tools. It sees the expected description, the kept findings and the excluded findings. It reports which kept finding matches, if any, and which excluded finding matches, if any.
 - **Scoring.** A vulnerable case is caught if a kept finding matches. Every kept finding on a clean case counts as one false positive. Misses are classified as dropped by hard rules, dropped by the filter, or never reported.
-- **Thresholds.** `eval/thresholds.yaml` sets the minimum recall and the maximum clean-case false positives for the gate model. Any run that crosses either one fails.
+- **Thresholds.** `eval/thresholds.yaml` sets the minimum recall and the maximum clean-case false positives for the gate model, the model the review uses in production ([0004](0004-models-and-second-reviewer.md)). Any run that crosses either one fails.
 
 ## Where the eval runs
 
@@ -75,6 +75,8 @@ Checks that do not call a model run on every PR to this repository in a separate
 - Real company cases live in other repositories. The scheduled workflow needs read access to them, through a GitHub App token or deploy keys, and the synthetic corpus does not.
 
 ## Open questions
+
+- [decide: how cost per case is measured. The upstream action records no cost ([0001](0001-composite-action-vs-custom-service.md), problem 9), so the harness has to collect it itself, from Claude Code's reported cost plus the token counts of any filter calls.]
 
 - [decide: schedule frequency (weekly proposed) and the monthly eval budget [budget].]
 - [decide: how CI gets read access to the repositories that real cases come from.]

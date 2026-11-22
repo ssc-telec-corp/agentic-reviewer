@@ -51,6 +51,8 @@ Option C.
 - [decide: whether to turn on GitHub's immutable releases for the repository. Check that the feature is available on [GitHub plan].]
 - [decide: whether an org ruleset's required workflow can reference a tag rather than a branch or SHA. Verify against the GitHub documentation before phase 1, the first phase that uses the ruleset. If it cannot, reference the release's commit SHA and record the version next to it.]
 
+- [decide: how the release workflow creates version tags that the tag ruleset blocks for everyone else. The workflow's built-in token can probably not be a ruleset bypass actor, so this likely needs a GitHub App owned by [security-team]. Verify against the GitHub documentation.]
+
 ## Future opportunities
 
 - A canary step: point the ruleset at a new release for [pilot repos] for [N] days before org-wide, using the shadow-mode controls from [0009](0009-rollout-gates.md).

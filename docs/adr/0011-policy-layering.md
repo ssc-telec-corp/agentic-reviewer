@@ -12,6 +12,8 @@ The review runs on every repository in [org], across different stacks and owners
 
 The upstream action takes instructions as two text files per run. `custom-security-scan-instructions` is appended to the scan prompt. `false-positive-filtering-instructions` replaces the filter's default rules instead of adding to them. If no filtering file is passed, the filter uses its defaults unchanged.
 
+Upstream ships two rule sets, and they differ. The slash command [`.claude/commands/security-review.md`](https://github.com/anthropics/claude-code-security-review/blob/main/.claude/commands/security-review.md) holds a scan prompt and false-positive rules, and is the main prompt for this design. The action's Python code holds its own copies (`prompts.py` for the scan, `claude_api_client.py` for the filter) and adds regex exclusions on top. Compared with the action's copy, the command's rules exclude secrets on disk only "if they are otherwise secured", exclude GitHub workflow input issues only when not triggerable by untrusted input, and drop the rule against reporting dependencies missing from the public registry. They add exclusions for regex injection, ReDoS, documentation files and missing audit logs. Findings are kept only at confidence 8 or above.
+
 Writing precedents for a company's systems needs that company's code and incidents, so it cannot be done in a proof of concept built on synthetic code.
 
 ## Considered options
@@ -38,6 +40,7 @@ Option A.
 
 - The wrapper passes only scan instructions. They contain the nine SIA criteria from `policy/base/criteria/*.yaml` (id, name, what each covers) and the instruction to set each finding's `category` to a criterion id ([0002](0002-classifier-vs-single-policy.md)).
 - It passes no filtering file, so upstream's filter uses its default rules unchanged.
+- The reference rule set is the slash command's. Whichever reviewer core [0001](0001-composite-action-vs-custom-service.md) chooses should use its text, so that every option is measured against the same rules. Option D uses the command file directly. With Option C, the action's prompt and filter text would be replaced by the command file's.
 - The precedents in `policy/base/` are drafts and are not loaded while `precedents_enabled: false` is set in `policy/base/global.yaml`. `policy/examples/repo-overlay.yaml` shows the overlay format and is not loaded either.
 
 ## Plan for when the policy is filled in
@@ -57,6 +60,7 @@ This is the design to use when [org] enables precedents. It needs its own ADR, s
 
 ## Consequences
 
+- Until the reviewer core changes, the test workflow runs the action, so it applies the action's rule set, not the reference one.
 - Eval numbers from the POC measure the upstream action with our criteria labels only. They are the baseline that a filled-in policy has to beat.
 - The drafts in `policy/base/` were written for the synthetic demo app's architecture. Treat them as a starting list, not as reviewed company policy.
 

@@ -47,4 +47,6 @@ Use all three, each for a different job:
 
 ## Open questions
 
+- [decide: the precision bar for turning on comments. 70% is the reference design's figure, the share of valid comments at which most engineers keep reading them. It has not been checked against [org]'s engineers.]
+
 - [decide: where feedback is aggregated (a scheduled job reading reactions through the GitHub API, or a data warehouse export), and who reviews disputed findings.]

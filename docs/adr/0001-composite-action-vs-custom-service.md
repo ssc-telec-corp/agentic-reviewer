@@ -25,6 +25,8 @@ It then posts the survivors as inline PR comments. It fetches the PR from the Gi
 6. **Instruction files given as relative paths are skipped,** with only a warning, because the scan runs from the action's own directory.
 7. **Credentials share the scan's environment.** The scan step holds `GITHUB_TOKEN` and the API key next to Claude Code, which reads files the PR author wrote. Only `Bash(ps:*)` is disallowed.
 8. **Unpinned installs.** It installs Claude Code from npm and its Python dependencies (for example `anthropic>=0.39.0`) without version pins.
+9. **No cost data.** Claude Code reports a cost for each run, but the action discards it, and the filter's API calls report nothing. Neither the eval nor budget alerts get a per-review cost from the action.
+10. **Deprecated runtime in its own steps.** It pins `actions/checkout`, `actions/cache`, `actions/setup-node`, `actions/setup-python` and `actions/upload-artifact` at versions built for Node.js 20, which GitHub is retiring. Every run shows a deprecation warning.
 
 **Observed in test runs** on a demo PR with a planted vulnerability:
 - With a credential the API rejected, the scan failed, and the job still passed with no comments (problem 2).
@@ -81,6 +83,7 @@ It then posts the survivors as inline PR comments. It fetches the PR from the Gi
   - a `criteria_touched` field for the SIA record;
   - dropped candidates as structured output, which an adjudicator needs.
 - Pro: Every model call goes through Claude Code, so one credential path serves all modes: a subscription login locally, and in CI a federated short-lived token passed to Claude Code as `ANTHROPIC_AUTH_TOKEN`, or an API key ([0010](0010-local-vs-ci-authentication.md)). This is where the reference design, Figma's, ended up.
+- Pro: Upstream's slash command [`.claude/commands/security-review.md`](https://github.com/anthropics/claude-code-security-review/blob/main/.claude/commands/security-review.md) already works this way: the finding pass and the false-positive filter both run as Claude Code sub-agents with read-only tools. It is the starting point, which leaves less new code than building from nothing. Its output must change from Markdown to a JSON schema.
 - Con: New code that has to be written and proven by the eval before anyone trusts it.
 - Con: The copied instructions can drift from upstream. It also depends on Claude Code CLI behaviour, so the CLI version must be pinned.
 
@@ -89,6 +92,17 @@ It then posts the survivors as inline PR comments. It fetches the PR from the Gi
 Options A and B are ruled out. [decide: Option C or D. The inputs to the decision are whether a working review is needed quickly (C starts from working code) or the long-term design matters more (D), how much of upstream's code the team is willing to own, and the company's rules for third-party code.]
 
 Until this is decided, the other ADRs describe the wrapper steps against upstream's interface (two instruction files, `claudecode-results.json`, `claudecode-error.log`). Option C keeps that interface. Option D replaces it, and those ADRs would need updating.
+
+## Security of the review step
+
+Whichever option is chosen, the review runs Claude Code on files the PR author controls. The wrapper:
+- deletes agent configuration from the checkout before the scan (`.claude/`, every `CLAUDE.md` and `CLAUDE.local.md`, and `.mcp.json`), so a PR cannot change the reviewer's instructions, settings or tools for its own review. Option D also runs Claude Code with `--restricted --safe-mode`;
+- runs with workflow permissions `contents: read` and `pull-requests: write` only;
+- never puts the PR title, body or branch names into shell commands, and reads them from the event file instead;
+- refuses fork PRs ([0005](0005-required-check-semantics.md));
+- keeps the model credential out of the step that holds the GitHub token, where the option allows it. Option C needs a change to upstream's step layout for this, and Option D does it by design. With federation ([0010](0010-local-vs-ci-authentication.md)), the credential is also short-lived.
+
+Accepted residual risk: a PR author can write comments or text that talk the reviewer out of reporting their own bug. The prompt tells the reviewer to treat PR content as data, but that is not guaranteed. Human code review of the PR remains the control.
 
 ## Consequences
 

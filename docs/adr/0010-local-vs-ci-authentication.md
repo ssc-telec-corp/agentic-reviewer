@@ -6,7 +6,7 @@
 
 ## Context
 
-The POC is built on a personal machine with a personal Claude subscription and no company credentials. Production uses company credentials. Facts from the upstream source and local tests:
+The proof of concept (POC) is built on a personal machine with a personal Claude subscription and no company credentials. Production uses company credentials. Facts from the upstream source and local tests:
 
 - `validate_claude_available()` in upstream exits unless `ANTHROPIC_API_KEY` is set, before Claude Code runs. The action cannot run on subscription credentials, even for the find stage.
 - The filter calls the Messages API through the `anthropic` SDK with that key.

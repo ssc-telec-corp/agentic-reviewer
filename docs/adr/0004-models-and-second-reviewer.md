@@ -53,5 +53,5 @@ To decide on Option B with data instead of opinion, the eval runs every test cas
 
 ## Future opportunities
 
-- **Second check of discarded findings ("adjudicator").** The action's filter discards some possible vulnerabilities, and lists them in its output under `excluded_findings_details`. A wrapper step after the action could ask the model to look at those again. Figma reports that this raised the share of known bugs found by about 30% (relative). Build it if the eval shows misses where the right finding was found and then discarded.
+- **Second check of discarded findings ("adjudicator").** The action's filter discards some possible vulnerabilities, and lists them in its output under `excluded_findings_details`. A wrapper step after the action could ask the model to look at those again. The reference design reports that this raised the share of known bugs found by about 30% (relative) ([Figma engineering blog](https://www.figma.com/blog/how-figma-stays-ahead-of-vulnerabilities-with-agents/)). Build it if the eval shows misses where the right finding was found and then discarded.
 - **Fallback model during outages.** When the Opus run errors, the wrapper could retry the action once with Sonnet instead of failing the check. Then the run's quality is Sonnet's eval number, which the job summary would state.

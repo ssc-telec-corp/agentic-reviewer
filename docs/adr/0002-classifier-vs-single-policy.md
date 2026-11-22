@@ -34,11 +34,15 @@ The upstream action takes one set of scan instructions and one set of filtering 
 
 Option C. The rendered scan instructions list the nine criteria with their ids. They tell the reviewer to set each finding's `category` to the criterion id, and the PR summary groups findings by `category`.
 
-Deliverable 4 (`classifier/`) is not built. The eval reports how often a matched finding's `category` equals the case's expected criterion.
+A finding that fits none of the nine criteria uses `category: other`. Every `other` finding is a signal that a criterion or precedent is missing. No classifier is built. The eval reports how often a matched finding's `category` equals the case's expected criterion.
 
 ## Consequences
 
 - The SIA record that the ticket's checkboxes used to hold is complete only for PRs with findings. For PRs without findings, it says only "reviewed, no findings".
+
+## Open questions
+
+- [decide: how a change that needs a security engineer's judgement reaches one when the reviewer reports nothing, for example a new authentication design or a new service. Candidates: CODEOWNERS on sensitive paths, requiring [security-team] review; an escalation flag from a criteria labeller that requests [security-team] review automatically; or a review the author requests.]
 
 ## Future opportunities
 
