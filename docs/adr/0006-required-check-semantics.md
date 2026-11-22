@@ -46,7 +46,7 @@ Option B.
 
 - The wrapper input `fail-on-severity` takes `none` or `high`. The workflow passes `${{ vars.ASR_FAIL_ON_SEVERITY || 'none' }}`, so blocking is switched on org-wide by one organization variable, at the rollout phase where precision supports it ([0010](0010-rollout-gates.md)).
 - With `high`, the check fails when the completed review reports at least one HIGH finding. The job summary and the failure message list those findings and link to the bypass process.
-- The check also fails when the review could not run ([0007](0007-fail-open-vs-fail-closed.md)), and for fork PRs ([0011](0011-fork-prs-and-untrusted-content.md)).
+- The check also fails when the review could not run ([0007](0007-fail-open-vs-fail-closed.md)), and for fork PRs, which GitHub runs without repository secrets, so the review cannot run.
 - The required check sits in its own ruleset, whose only bypass actor is [security-team]. A bypass then skips only this check, not other branch protections such as required approvals.
 
 ## Bypass process

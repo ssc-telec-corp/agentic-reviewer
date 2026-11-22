@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0003](0003-classifier-vs-single-policy.md), [0004](0004-precedents-vs-rules.md), [0011](0011-fork-prs-and-untrusted-content.md)
+- Related: [0003](0003-classifier-vs-single-policy.md), [0004](0004-precedents-vs-rules.md)
 
 ## Context
 

@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0002](0002-composite-action-vs-custom-service.md), [0008](0008-eval-corpus-and-judge.md), [0011](0011-fork-prs-and-untrusted-content.md)
+- Related: [0002](0002-composite-action-vs-custom-service.md), [0008](0008-eval-corpus-and-judge.md)
 
 ## Context
 

@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0005](0005-models-and-second-reviewer.md), [0007](0007-fail-open-vs-fail-closed.md), [0008](0008-eval-corpus-and-judge.md), [0011](0011-fork-prs-and-untrusted-content.md), [0012](0012-local-vs-ci-authentication.md), [0013](0013-policy-layering.md)
+- Related: [0005](0005-models-and-second-reviewer.md), [0007](0007-fail-open-vs-fail-closed.md), [0008](0008-eval-corpus-and-judge.md), [0012](0012-local-vs-ci-authentication.md), [0013](0013-policy-layering.md)
 
 ## Context
 
@@ -14,7 +14,7 @@ Reading the source showed behaviour that the SIA use case has to work around:
 2. The filter's startup check calls the hard-coded model `claude-3-5-haiku-20241022`. If that call fails, the filter turns itself off with a log warning, and every candidate is posted unfiltered. Whether that model still answers is Unknown. It is the first thing to verify ([0012](0012-local-vs-ci-authentication.md)).
 3. By default it reviews only the first commit of a PR (`run-every-commit: false`). Separately, its comment script posts nothing if any earlier bot security comment exists on the PR.
 4. It installs `@anthropic-ai/claude-code` from npm without a version pin.
-5. The scan step holds `GITHUB_TOKEN` and the model credential in the same environment as Claude Code ([0011](0011-fork-prs-and-untrusted-content.md)).
+5. The scan step holds `GITHUB_TOKEN` and the model credential in the same environment as Claude Code.
 
 ## Considered options
 
@@ -44,9 +44,9 @@ Reading the source showed behaviour that the SIA use case has to work around:
 
 Option A, as the first option. It gets a working reviewer on every PR soonest, and its eval numbers become the baseline that Options B, C and D have to beat. `action/action.yml` is a composite action with these steps:
 
-1. Refuse fork PRs ([0011](0011-fork-prs-and-untrusted-content.md)).
+1. Refuse fork PRs. GitHub runs them without repository secrets, so the review could not run anyway.
 2. Render the policy ([0013](0013-policy-layering.md)) into the two instruction files.
-3. Remove agent configuration files (`.claude/`, `CLAUDE.md`, `.mcp.json`) from the checked-out working tree ([0011](0011-fork-prs-and-untrusted-content.md)).
+3. Remove agent configuration files (`.claude/`, `CLAUDE.md`, `.mcp.json`) from the checked-out working tree, so that a PR cannot change how Claude Code behaves during its own review.
 4. Call `anthropics/claude-code-security-review@0c6a49f...` with `run-every-commit: true`, a current `claude-model`, and the rendered files.
 5. Verify the outcome. The step reads `claudecode-results.json` and `claudecode-error.log`, and fails the check if the scan errored or if the filter disabled itself ([0007](0007-fail-open-vs-fail-closed.md)), or, when blocking is on, if a HIGH finding was reported ([0006](0006-required-check-semantics.md)).
 6. Write every kept finding to the job summary. This is done because item 3 can suppress inline comments on later pushes.
