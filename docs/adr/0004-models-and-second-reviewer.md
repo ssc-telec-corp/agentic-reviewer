@@ -48,8 +48,10 @@ To decide on Option B with data instead of opinion, the eval runs every test cas
 ## Open questions
 
 - [decide: how refusals are handled. Opus 5.5 runs safety classifiers, including one for cyber topics, and a security-review prompt can trigger a refusal. The upstream code does not handle a refusal: in the scan it looks like a clean review, and in the filter the finding is kept unfiltered ([0001](0001-reviewer-core.md), problems 2 and 3). The eval should count refusals per stage.]
-
 - [decide: adopt Option B if the two models together find at least [X] more of the known vulnerabilities than Opus alone, while false findings on clean changes stay within the threshold in `eval/thresholds.yaml`. The synthetic test set is too small to decide this, so it needs real cases ([0007](0007-eval-corpus-and-judge.md)).]
+
+- [decide: the effort level for the review. Effort controls how much the model reasons before answering, and so its depth, latency and cost. The API default for Opus 5.5 is `medium`. The upstream action sets no effort, so the review gets whatever default Claude Code applies in headless mode, which is Unknown. Security review is reasoning-heavy, so `high` or `xhigh` may find more. The eval should compare effort levels on the same model, and the result should be fixed in configuration rather than left to a default.]
+- [decide: whether different PRs get different models, or different effort levels. Examples: a cheaper model or lower effort for small or low-risk changes, and the strongest model for large changes or ones that touch authentication or authorization. Routing would use deterministic signals such as diff size or changed paths, or the review's own `criteria_touched` from an earlier run. Unlike the classifier rejected in [0002](0002-classifier-vs-single-policy.md), routing changes only how strong the review is, never whether it runs. A misrouted PR still gets reviewed, but by a weaker setting. Each route needs its own eval numbers before it is used.]
 
 ## Future opportunities
 
