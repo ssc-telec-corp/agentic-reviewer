@@ -64,6 +64,7 @@ The same path covers an emergency, for example a hotfix during an incident that 
 ## Consequences
 
 - Engineers whose PR is wrongly blocked wait for security on-call. The [SLA] and the on-call load are set by HIGH precision, which phase 2 of the rollout measures before blocking turns on.
+- A repository admin can override `ASR_FAIL_ON_SEVERITY` for their own repository with a repository variable, which switches off blocking there. [0010](0010-rollout-gates.md) describes this risk and how overrides are detected.
 - Since a fixed finding stops blocking on the next push, "fixed" means "the reviewer no longer reports it". A fix that only rewords the code so the model stops noticing would also pass. Human code review remains the control for that.
 - The check is red on every bypassed PR, so "red check, merged" is the signal the periodic review looks for.
 

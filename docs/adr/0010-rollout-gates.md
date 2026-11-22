@@ -46,7 +46,14 @@ In shadow mode the wrapper writes findings to the job summary, upstream uploads 
 - Phase 1 uses the ruleset's evaluate mode, so the check reports results without blocking. Whether evaluate mode is available for required workflows on our GitHub plan is Unknown, and has to be checked against the GitHub documentation for [GitHub plan].
 - Phases 1 to 4 run fail-open, and the code default (closed) applies only from phase 5.
 - HIGH findings block a merge only from phase 3, after phase 2 has measured how often they are right.
+- Organization variables are not accessible to private repositories on GitHub Free, according to GitHub's documentation. The controls therefore assume [GitHub plan] is a paid plan.
+- A repository variable overrides an organization variable with the same name. That is how pilot repos get their own settings, but it also means any repository admin can set `ASR_FAIL_ON_SEVERITY=none` or `ASR_FAIL_MODE=open` on their own repository and switch off blocking for their own PRs. The wrapper writes the values it used to every run's job summary, so an override is visible after the fact, but nothing prevents it.
+
+## Future opportunities
+
+- If repository-level overrides are seen in practice, move the controls to repository variables of the central `adaptive-security-reviewer` repository, which only [security-team] administers. The wrapper would read them through the GitHub API with a security-owned GitHub App token, and ignore variables in the reviewed repository.
 
 ## Open questions
 
 - [decide: the pilot repos, N (minimum number of real corpus cases), X (minimum HIGH precision before blocking), and Y (maximum check failure rate).]
+- [decide: who checks for repository-level `ASR_*` overrides, for example in the periodic bypass review ([0006](0006-required-check-semantics.md)), and how often.]

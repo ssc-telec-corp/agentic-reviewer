@@ -40,6 +40,7 @@ The workflow passes `fail-mode: ${{ vars.ASR_FAIL_MODE || 'closed' }}`. With `cl
 ## Consequences
 
 - During an outage, on-call sets `ASR_FAIL_MODE=open`. Afterwards they set it back and re-run the skipped checks. The [runbook](../runbook.md) has the commands.
+- A repository admin can override `ASR_FAIL_MODE` for their own repository with a repository variable. See [0010](0010-rollout-gates.md) for this risk.
 - The verify step depends on upstream's file names and log strings. Bumping the upstream SHA must include a test run that exercises the error path.
 
 ## Future opportunities
