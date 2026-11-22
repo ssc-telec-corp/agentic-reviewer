@@ -37,16 +37,50 @@ Option B, with an LLM judge for vulnerable cases.
 - **Isolation.** The harness exports only the reviewed path at the head ref into a temporary directory. Claude Code runs there, so it cannot read the corpus, the policy or other branches.
 - **Judge.** `claude-sonnet-5-5`, with no tools. It sees the expected description, the kept findings and the excluded findings. It reports which kept finding matches, if any, and which excluded finding matches, if any.
 - **Scoring.** A vulnerable case is caught if a kept finding matches. Every kept finding on a clean case counts as one false positive. Misses are classified as dropped by hard rules, dropped by the filter, or never reported.
-- **Thresholds.** `eval/thresholds.yaml` sets the minimum recall and the maximum clean-case false positives for the gate model. The scheduled workflow fails when either is crossed.
+- **Thresholds.** `eval/thresholds.yaml` sets the minimum recall and the maximum clean-case false positives for the gate model. Any run that crosses either one fails.
+
+## Where the eval runs
+
+The same command runs in three places, with no change to the harness:
+
+- **Locally**, for a developer changing the policy or the wrapper. One command runs the whole corpus and writes the report.
+- **On a schedule in GitHub Actions**, using the workflow `.github/workflows/adaptive-security-reviewer-eval.yml`. It runs every [Monday 06:00 UTC] and on manual dispatch. A scheduled run is needed even when nothing in this repository changed, because three things outside it change review quality:
+  - Upstream installs the latest Claude Code from npm on every run, with no version pin ([0002](0002-composite-action-vs-custom-service.md)).
+  - Model behaviour behind a fixed model ID can change.
+  - The filter's hard-coded validation model can be retired, which silently turns filtering off ([0012](0012-local-vs-ci-authentication.md)).
+- **In the release workflow**, as the gate before a version is tagged ([0014](0014-versioned-releases.md)).
+
+The scheduled workflow:
+- checks out the repository with full history and fetches every case's refs;
+- runs the corpus on both models ([0005](0005-models-and-second-reviewer.md));
+- writes the report to the job summary;
+- uploads the full report, with per-case results and judge decisions, as an artifact kept for [90] days;
+- compares the numbers with the eval report attached to the latest release, and shows the difference per case.
+
+The workflow fails when the gate model crosses `eval/thresholds.yaml`. A failure notifies [security-team channel]. It runs one at a time (one concurrency group), with read-only repository permissions and the `ANTHROPIC_API_KEY` secret.
+
+Checks that do not call a model run on every PR to this repository in a separate, cheap workflow:
+- the policy validator;
+- the test that compares the upstream filter defaults with the pinned SHA ([0013](0013-policy-layering.md));
+- validation of every corpus case file;
+- the harness's unit tests;
+- the docs lint.
 
 ## Consequences
 
-- With one run per case per model, nondeterminism shows up as noise between runs. The thresholds leave margin for it.
+- With one run per case per model, nondeterminism shows up as noise between runs. The thresholds leave margin for it, and the comparison with the last release shows which cases flipped.
 - Judge decisions are saved with each result, for audit.
+- Every scheduled run costs one full eval. The cost per run is in the report. Frequency is the lever if it is too high.
+- Real company cases live in other repositories. The scheduled workflow needs read access to them, through a GitHub App token or deploy keys, and the synthetic corpus does not.
+
+## Open questions
+
+- [decide: schedule frequency (weekly proposed) and the monthly eval budget [budget].]
+- [decide: how CI gets read access to the repositories that real cases come from.]
+- [decide: how often judge decisions are audited by hand, and by whom.]
 
 ## Future opportunities
 
 - Three runs per case to measure variance, once the per-case cost is known.
 - Run a headless-variant reviewer next to the upstream pipeline in the same report ([0002](0002-composite-action-vs-custom-service.md)).
 - Automatic miss triage that reads the Claude Code transcript (file not read, read but not flagged), as the reference design does.
-- [decide: how often judge decisions are audited by hand, and by whom.]

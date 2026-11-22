@@ -38,8 +38,10 @@ A PR cannot merge while the review reports a HIGH severity finding, or while the
 flowchart TD
     P["Policy change or new model"] --> E["Eval: run the reviewer on known vulnerable<br/>and known clean changes"]
     C["New eval case"] --> E
+    S["Weekly schedule in GitHub Actions<br/>(catches changes in Claude Code and models)"] --> E
     E --> T{"Recall and false positives<br/>within thresholds?"}
-    T -- "no: fix the policy" --> P
+    T -- "no" --> X["Run fails, security team alerted"]
+    X --> P
     T -- "yes" --> R["Numbered release vX.Y.Z"]
     R --> O["Org ruleset points at the new release"]
     O --> PR["Reviews on every PR"]
@@ -47,7 +49,7 @@ flowchart TD
     PR -- "bug found later (bounty, incident, audit)" --> C
 ```
 
-Each missed bug becomes a test case, and each wrong finding can become a policy fix. A change reaches PRs only as a numbered release that passed the eval.
+Each missed bug becomes a test case, and each wrong finding can become a policy fix. A change reaches PRs only as a numbered release that passed the eval. The weekly run catches quality changes that come from outside the repository, such as a new Claude Code version.
 
 ## Documents
 
