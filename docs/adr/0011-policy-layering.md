@@ -4,7 +4,7 @@
 - Date: 2026-11-23
 - Related: [0001](0001-reviewer-core.md), [0002](0002-classifier-vs-single-policy.md), [0003](0003-precedents-vs-rules.md), [0005](0005-required-check-semantics.md), [0007](0007-eval-corpus-and-judge.md), [0012](0012-versioned-releases.md)
 
-**In short:** for now, the review uses only the default rules that ship with `claude-code-security-review`, plus the list of SIA criteria. Org precedents exist as switched-off drafts in `policy/base/`. Repository overlays, kept in this repository and owned by [security-team], are designed below but not built. Both get filled in after the project moves to [org].
+**In short:** for now, the review uses only the default rules that ship with `claude-code-security-review`, plus the list of SIA criteria. Org precedents exist as switched-off drafts in `policy/base/`. Repository overlays, kept in this repository and owned by the Adaptive Security team, are designed below but not built. Both get filled in after the project moves to [org].
 
 ## Context
 
@@ -48,14 +48,14 @@ Option A.
 This is the design to use when [org] enables precedents. It needs its own ADR, superseding this one, when it is built.
 
 - **Upstream's defaults come first and win.** Our precedents only add to them. A precedent that repeats an upstream default is not added, and one that contradicts an upstream default is removed or reworded ([0003](0003-precedents-vs-rules.md)).
-- **Org base policy.** This means `policy/base/`, owned by [security-team], stack-agnostic, and changed only through PRs that include an eval run. A policy change is a MINOR release ([0012](0012-versioned-releases.md)).
+- **Org base policy.** This means `policy/base/`, owned by the Adaptive Security team, stack-agnostic, and changed only through PRs that include an eval run. A policy change is a MINOR release ([0012](0012-versioned-releases.md)).
 - **Rendering.**
   - **Scan instructions:** the criteria list, the system description and trust boundaries, then all precedents.
   - **Filtering instructions:** upstream's default text unchanged, then the line "Additional precedents for [org]. They add to the rules above; where they seem to conflict, the rules above apply.", then the same precedents.
   - The default text is stored in the repository. A test compares it with upstream's `_generate_single_finding_prompt` output at the pinned SHA, and fails after an upstream bump until the copy is updated.
-- **Repository overlays live in the central repository, owned by [security-team].** An overlay is an optional `policy/repos/<repo-name>.yaml` in the reviewer repository. It holds `system`, `trust_boundaries` and criterion-tagged `precedents`. It can only add precedents, which are rendered after the base ones under "Repository-specific". The wrapper picks the file that matches `github.repository` from its own copy of the reviewer repository, so it needs no extra token and no read from the reviewed repository.
+- **Repository overlays live in the central repository, owned by the Adaptive Security team.** An overlay is an optional `policy/repos/<repo-name>.yaml` in the reviewer repository. It holds `system`, `trust_boundaries` and criterion-tagged `precedents`. It can only add precedents, which are rendered after the base ones under "Repository-specific". The wrapper picks the file that matches `github.repository` from its own copy of the reviewer repository, so it needs no extra token and no read from the reviewed repository.
   - This was chosen over an overlay file inside each reviewed repository. Repository owners cannot be relied on to keep policy correct, and one added precedent can exempt a whole class of findings in effect ("X is protected upstream, not a finding"). With the files in the central repository, no change in a reviewed repository can alter its own review.
-  - The cost: [security-team] writes and maintains every overlay, and teams send system context to them instead of editing it themselves. An overlay change is a policy change, so it ships in a MINOR release ([0012](0012-versioned-releases.md)).
+  - The cost: the Adaptive Security team writes and maintains every overlay, and teams send system context to them instead of editing it themselves. An overlay change is a policy change, so it ships in a MINOR release ([0012](0012-versioned-releases.md)).
 - **Validation.** `python -m adaptive_security_reviewer validate-policy` checks the base policy and every overlay in CI.
 
 ## Consequences

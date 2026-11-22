@@ -17,15 +17,14 @@ What the system has to achieve, independent of how. The mechanisms are under "Ho
 - **R5.** What the PR shows is current. A finding introduced by a later push appears, and a finding that was fixed is marked resolved.
 - **R6.** A change with a confirmed serious vulnerability does not merge. A wrong finding cannot block work indefinitely.
 - **R7.** A review that did not happen is never mistaken for a clean review.
-- **R8.** Only Anthropic models are used.
-- **R9.** No long-lived model credential exists that could leak.
-- **R10.** Code under review cannot change how it is reviewed, or reach the reviewer's credentials.
-- **R11.** Review quality is measured, not assumed: how many known vulnerabilities it finds, how many false alarms it raises, and what each review costs.
-- **R12.** Every change to the reviewer is measured before it reaches PRs, and for any PR it is possible to tell which version reviewed it.
-- **R13.** What is measured is what runs: the same reviewer runs in the eval, on PRs, and on an engineer's machine.
-- **R14.** Every PR keeps a record of the SIA criteria it touched, which replaces the ticket's checkboxes.
-- **R15.** Rollout steps and incident response (turning comments, blocking or fail-closed behaviour on and off) need no code release.
-- **R16.** The rules the reviewer applies are owned by [security-team], and can be extended with company-specific knowledge.
+- **R8.** No long-lived model credential exists that could leak.
+- **R9.** Code under review cannot change how it is reviewed, or reach the reviewer's credentials.
+- **R10.** Review quality is measured, not assumed: how many known vulnerabilities it finds, how many false alarms it raises, and what each review costs.
+- **R11.** Every change to the reviewer is measured before it reaches PRs, and for any PR it is possible to tell which version reviewed it.
+- **R12.** What is measured is what runs: the same reviewer runs in the eval, on PRs, and on an engineer's machine.
+- **R13.** Every PR keeps a record of the SIA criteria it touched, which replaces the ticket's checkboxes.
+- **R14.** Rollout steps and incident response (turning comments, blocking or fail-closed behaviour on and off) need no code release.
+- **R15.** The rules the reviewer applies are owned by the Adaptive Security team, and can be extended with company-specific knowledge.
 
 ## Architecture
 
@@ -71,17 +70,16 @@ The reviewer core is the only component that calls a model. The PR integration a
 | R3 Supplements human review | Existing review requirements stay unchanged. The reviewer does not request reviewers | [0002](adr/0002-classifier-vs-single-policy.md) |
 | R4 Speaks only with findings | Comments are posted only for findings. The SIA criteria go to the job summary | [0002](adr/0002-classifier-vs-single-policy.md), [0005](adr/0005-required-check-semantics.md) |
 | R5 PR shows the current state | The comment sync step posts new findings and resolves fixed ones | [0005](adr/0005-required-check-semantics.md) |
-| R6 Serious vulnerabilities do not merge | HIGH findings fail the required check. [security-team] can bypass the check through a recorded process | [0005](adr/0005-required-check-semantics.md) |
+| R6 Serious vulnerabilities do not merge | HIGH findings fail the required check. The Adaptive Security team can bypass the check through a recorded process | [0005](adr/0005-required-check-semantics.md) |
 | R7 No silent failure | The core returns `status: error` and exit code 3. The check fails closed, with an org switch for outages | [0006](adr/0006-fail-open-vs-fail-closed.md) |
-| R8 Anthropic models only | Claude models through Claude Code | [0004](adr/0004-models-and-second-reviewer.md) |
-| R9 No long-lived credential | Workload identity federation: a short-lived token per job | [0010](adr/0010-local-vs-ci-authentication.md) |
-| R10 Code cannot steer the reviewer | Agent configuration is deleted before the review, Claude Code runs in restricted mode, and the credential is kept out of steps that hold the GitHub token | [0001](adr/0001-reviewer-core.md) |
-| R11 Quality measured | Eval corpus, LLM judge, and report with recall, false positives and cost | [0007](adr/0007-eval-corpus-and-judge.md), [0008](adr/0008-measuring-precision.md) |
-| R12 Changes measured before PRs | Releases are tagged only after the eval passes, and the ruleset pins a release | [0012](adr/0012-versioned-releases.md) |
-| R13 Same reviewer everywhere | One reviewer core with one contract, called by the PR workflow, the eval and engineers | [0007](adr/0007-eval-corpus-and-judge.md) |
-| R14 SIA record per PR | The review returns `criteria_touched`, written to the job summary and the result artifact | [0002](adr/0002-classifier-vs-single-policy.md) |
-| R15 No release for rollout or incidents | Organization variables switch comments, blocking and fail mode | [0009](adr/0009-rollout-gates.md) |
-| R16 Rules owned by security | Policy text in the central repository: upstream's reference rules, plus org precedents and repository overlays added by [security-team] | [0003](adr/0003-precedents-vs-rules.md), [0011](adr/0011-policy-layering.md) |
+| R8 No long-lived credential | Workload identity federation: a short-lived token per job | [0010](adr/0010-local-vs-ci-authentication.md) |
+| R9 Code cannot steer the reviewer | Agent configuration is deleted before the review, Claude Code runs in restricted mode, and the credential is kept out of steps that hold the GitHub token | [0001](adr/0001-reviewer-core.md) |
+| R10 Quality measured | Eval corpus, LLM judge, and report with recall, false positives and cost | [0007](adr/0007-eval-corpus-and-judge.md), [0008](adr/0008-measuring-precision.md) |
+| R11 Changes measured before PRs | Releases are tagged only after the eval passes, and the ruleset pins a release | [0012](adr/0012-versioned-releases.md) |
+| R12 Same reviewer everywhere | One reviewer core with one contract, called by the PR workflow, the eval and engineers | [0007](adr/0007-eval-corpus-and-judge.md) |
+| R13 SIA record per PR | The review returns `criteria_touched`, written to the job summary and the result artifact | [0002](adr/0002-classifier-vs-single-policy.md) |
+| R14 No release for rollout or incidents | Organization variables switch comments, blocking and fail mode | [0009](adr/0009-rollout-gates.md) |
+| R15 Rules owned by security | Policy text in the central repository: upstream's reference rules, plus org precedents and repository overlays added by the Adaptive Security team | [0003](adr/0003-precedents-vs-rules.md), [0011](adr/0011-policy-layering.md) |
 
 ## Components and contracts
 
@@ -126,23 +124,23 @@ When `status` is `error`, `findings` is empty and an `error` field says why. Not
 
 A composite GitHub Action, called by the workflow the org ruleset requires.
 
-1. **Prepare:** refuse fork PRs, check out the PR head, compute the diff against the base, delete agent configuration (`.claude/`, `CLAUDE.md`, `.mcp.json`) from the checkout, and get a short-lived credential (R9, R10).
+1. **Prepare:** refuse fork PRs, check out the PR head, compute the diff against the base, delete agent configuration (`.claude/`, `CLAUDE.md`, `.mcp.json`) from the checkout, and get a short-lived credential (R8, R9).
 2. **Review:** call the reviewer core.
 3. **Sync comments:** match the findings against the bot's earlier comments, post new ones, reply to and resolve the ones no longer reported, and keep one summary comment once the PR has had findings (R4, R5).
-4. **Decide the check:** fail when the review did not complete (unless fail mode is open), and fail on a HIGH finding when blocking is on (R6, R7, R15).
-5. **Record:** write the criteria touched and the findings to the job summary, and upload `result.json` (R14).
+4. **Decide the check:** fail when the review did not complete (unless fail mode is open), and fail on a HIGH finding when blocking is on (R6, R7, R14).
+5. **Record:** write the criteria touched and the findings to the job summary, and upload `result.json` (R13).
 
 ### Eval harness
 
-Turns each corpus case (a base commit, a head commit, and the expected result) into a code directory and a diff, calls the reviewer core, grades the result with an LLM judge, and writes a report with recall, false positives and cost per case. It runs locally, on a schedule, and as the gate before a release (R11, R12, R13).
+Turns each corpus case (a base commit, a head commit, and the expected result) into a code directory and a diff, calls the reviewer core, grades the result with an LLM judge, and writes a report with recall, false positives and cost per case. It runs locally, on a schedule, and as the gate before a release (R10, R11, R12).
 
 ### Policy
 
-Text in this repository: the reference rules from upstream's `security-review` command, plus org precedents, switched off until [org] fills them in. Overlays for individual repositories live here too, owned by [security-team]. They are planned, not built (R16).
+Text in this repository: the reference rules from upstream's `security-review` command, plus org precedents, switched off until [org] fills them in. Overlays for individual repositories live here too, owned by the Adaptive Security team. They are planned, not built (R15).
 
 ### Release and enforcement
 
-A release workflow runs the eval and tags `vX.Y.Z` only if the thresholds are met. The org ruleset requires the PR workflow at a pinned release. Organization variables switch comments, blocking and fail mode (R12, R15).
+A release workflow runs the eval and tags `vX.Y.Z` only if the thresholds are met. The org ruleset requires the PR workflow at a pinned release. Organization variables switch comments, blocking and fail mode (R11, R14).
 
 ## What is verified and what is not
 

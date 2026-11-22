@@ -1,4 +1,4 @@
-# Org base policy: applies to every repository. Owned by [security-team].
+# Org base policy: applies to every repository. Owned by the Adaptive Security team.
 # DRAFT, NOT LOADED: while precedents_enabled is false, the reviewer uses only
 # the default rules of claude-code-security-review plus the SIA criteria list.
 # The precedents in this directory are starting drafts for [org] to edit.

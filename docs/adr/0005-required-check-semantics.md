@@ -47,7 +47,7 @@ Option B.
 - The wrapper input `fail-on-severity` takes `none` or `high`. The workflow passes `${{ vars.ASR_FAIL_ON_SEVERITY || 'none' }}`, so blocking is switched on org-wide by one organization variable, at the rollout phase where precision supports it ([0009](0009-rollout-gates.md)).
 - With `high`, the check fails when the completed review reports at least one HIGH finding. The job summary and the failure message list those findings and link to the bypass process.
 - The check also fails when the review could not run ([0006](0006-fail-open-vs-fail-closed.md)), and for fork PRs, which GitHub runs without repository secrets, so the review cannot run.
-- The required check sits in its own ruleset, whose only bypass actor is [security-team]. A bypass then skips only this check, not other branch protections such as required approvals.
+- The required check sits in its own ruleset, whose only bypass actor is the Adaptive Security team. A bypass then skips only this check, not other branch protections such as required approvals.
 - **The wrapper posts the comments, not upstream.** It calls upstream with `comment-pr: false`, reads upstream's `findings.json` after every run, and gives each finding a fingerprint. On every run, the posting step:
   - posts only findings that are not already on the PR;
   - replies "no longer reported in `<sha>`" to findings that disappeared, and resolves their threads;
@@ -59,7 +59,7 @@ Option B.
 
 When the author believes a HIGH finding is wrong:
 
-1. **The author replies to the finding's comment** with why it is wrong, and asks for a security review in [channel] or by requesting review from [security-team]. Nothing else changes for the engineer.
+1. **The author replies to the finding's comment** with why it is wrong, and asks for a security review in [channel] or by requesting review from the Adaptive Security team. Nothing else changes for the engineer.
 2. **Security on-call decides within [SLA].** If the finding is real, the author fixes it, and the next push re-runs the review. If the finding is wrong, on-call merges the PR through the ruleset bypass.
 3. **On-call records the decision** in a PR comment with a fixed form: `ASR bypass: <finding title> | reason: <why it is wrong> | follow-up: <link to policy PR or eval case, or none>`.
 4. **Every bypass is a labelled false positive.** It counts against precision ([0008](0008-measuring-precision.md)). When the same kind of mistake repeats, on-call opens a policy PR with a new precedent, so the reviewer stops raising it.
@@ -97,4 +97,4 @@ The wrapper's own posting step, below, replaces upstream's comment script and cl
 
 ## Future opportunities
 
-- **Option D for security engineers only**, if the bypass volume becomes a burden: stable finding fingerprints plus a dismissal command, checked against [security-team] membership.
+- **Option D for security engineers only**, if the bypass volume becomes a burden: stable finding fingerprints plus a dismissal command, checked against the Adaptive Security team membership.

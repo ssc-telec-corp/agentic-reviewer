@@ -37,7 +37,7 @@ Option C.
   - MINOR: anything that can change findings, such as a base-policy change, a model change or an upstream SHA bump.
   - PATCH: changes that cannot change findings, such as docs or wrapper fixes with no effect on review output.
 - **Release workflow.** `.github/workflows/release.yml` runs on manual dispatch with a version input. It checks that the version is valid semver and higher than the latest release. It runs the policy validator and the full eval with `eval/thresholds.yaml`. Only if the eval passes does it create the tag and the GitHub Release. The release notes contain the generated changelog, the upstream SHA, the model ID, and the eval summary (recall, clean-case false positives, cost per case). The eval report is attached to the release as an asset.
-- **Who can release.** Only [security-team] can dispatch the workflow. A tag ruleset on `v*` blocks creating, moving and deleting version tags for everyone except the release workflow.
+- **Who can release.** Only the Adaptive Security team can dispatch the workflow. A tag ruleset on `v*` blocks creating, moving and deleting version tags for everyone except the release workflow.
 - **Consumers.** The org-required workflow references the action as `[org]/adaptive-security-reviewer/action@vX.Y.Z`. The org ruleset references that workflow at the same tag. A rollout is a reviewed change of that tag ([0009](0009-rollout-gates.md)).
 - **Traceability.** The job summary and the results artifact of every review record the release version.
 
@@ -51,7 +51,7 @@ Option C.
 - [decide: whether to turn on GitHub's immutable releases for the repository. Check that the feature is available on [GitHub plan].]
 - [decide: whether an org ruleset's required workflow can reference a tag rather than a branch or SHA. Verify against the GitHub documentation before phase 1, the first phase that uses the ruleset. If it cannot, reference the release's commit SHA and record the version next to it.]
 
-- [decide: how the release workflow creates version tags that the tag ruleset blocks for everyone else. The workflow's built-in token can probably not be a ruleset bypass actor, so this likely needs a GitHub App owned by [security-team]. Verify against the GitHub documentation.]
+- [decide: how the release workflow creates version tags that the tag ruleset blocks for everyone else. The workflow's built-in token can probably not be a ruleset bypass actor, so this likely needs a GitHub App owned by the Adaptive Security team. Verify against the GitHub documentation.]
 
 ## Future opportunities
 

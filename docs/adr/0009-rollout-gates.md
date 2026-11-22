@@ -51,7 +51,7 @@ In shadow mode the wrapper writes findings to the job summary, upstream uploads 
 
 ## Future opportunities
 
-- If repository-level overrides are seen in practice, move the controls to repository variables of the central `adaptive-security-reviewer` repository, which only [security-team] administers. The wrapper would read them through the GitHub API with a security-owned GitHub App token, and ignore variables in the reviewed repository.
+- If repository-level overrides are seen in practice, move the controls to repository variables of the central `adaptive-security-reviewer` repository, which only the Adaptive Security team administers. The wrapper would read them through the GitHub API with a security-owned GitHub App token, and ignore variables in the reviewed repository.
 
 ## Open questions
 

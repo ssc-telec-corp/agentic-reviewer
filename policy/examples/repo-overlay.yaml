@@ -1,7 +1,7 @@
 # EXAMPLE ONLY, NOT LOADED. Repository overlays are planned, not built
 # (docs/adr/0011). This file shows the format, written for demo-app/.
 # When built, overlays live in this repository as policy/repos/<repo-name>.yaml,
-# owned by [security-team]. Reviewed repositories never hold their own policy.
+# owned by the Adaptive Security team. Reviewed repositories never hold their own policy.
 version: 1
 
 system: |

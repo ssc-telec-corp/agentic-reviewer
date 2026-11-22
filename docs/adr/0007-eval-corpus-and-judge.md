@@ -58,7 +58,7 @@ The scheduled workflow:
 - uploads the full report, with per-case results and judge decisions, as an artifact kept for [90] days;
 - compares the numbers with the eval report attached to the latest release, and shows the difference per case.
 
-The workflow fails when the gate model crosses `eval/thresholds.yaml`. A failure notifies [security-team channel]. It runs one at a time (one concurrency group), with read-only repository permissions and the `ANTHROPIC_API_KEY` secret.
+The workflow fails when the gate model crosses `eval/thresholds.yaml`. A failure notifies [Adaptive Security team channel]. It runs one at a time (one concurrency group), with read-only repository permissions and the `ANTHROPIC_API_KEY` secret.
 
 Checks that do not call a model run on every PR to this repository in a separate, cheap workflow:
 - the policy validator;

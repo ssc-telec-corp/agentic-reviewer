@@ -28,7 +28,7 @@ These come from the people who own this repo. The reason behind most of them: re
 - Use a table or bullets only when the content really is a list. Otherwise write prose.
 - Never invent numbers, benchmarks or tool behaviour. Numbers come from the eval report, and tool behaviour from the source or a test run.
 - Use active voice. No emoji, no marketing tone.
-- Use `[placeholders]` for company-specific values (`[org]`, `[security-team]`, `[budget]`), and never refer to anyone's personal setup or to the conversation the docs came from. The docs get copied into the company as they are.
+- Use `[placeholders]` for company-specific values (`[org]`, `[budget]`), and never refer to anyone's personal setup or to the conversation the docs came from. The docs get copied into the company as they are.
 
 ## ADR rules
 
