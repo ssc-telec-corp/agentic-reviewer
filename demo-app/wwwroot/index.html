@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Notes</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <main>
+    <form id="login">
+      <input name="email" type="email" placeholder="Email" required>
+      <input name="password" type="password" placeholder="Password" required>
+      <button type="submit">Sign in</button>
+    </form>
+    <section id="notes" hidden>
+      <form id="new-note">
+        <input name="title" placeholder="Title" maxlength="200" required>
+        <textarea name="body" placeholder="Note" maxlength="10000"></textarea>
+        <button type="submit">Add</button>
+      </form>
+      <ul id="note-list"></ul>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

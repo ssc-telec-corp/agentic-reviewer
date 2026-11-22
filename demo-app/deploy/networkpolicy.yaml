@@ -1,0 +1,19 @@
+# Only the ingress controller may reach the app pods. The ingress controller
+# terminates TLS and is the load balancer listed in KnownProxies.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: demo-app-ingress-only
+  namespace: notes
+spec:
+  podSelector:
+    matchLabels:
+      app: demo-app
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8080

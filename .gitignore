@@ -1,0 +1,8 @@
+bin/
+obj/
+.venv/
+__pycache__/
+eval/.cache/
+eval/reports/runs/
+*.pyc
+.DS_Store
