@@ -11,7 +11,7 @@ flowchart TD
 
     subgraph W["adaptive-security-reviewer vX.Y.Z (our wrapper)"]
         C["Add the SIA criteria to<br/>Anthropic's default rules"]
-        subgraph U["claude-code-security-review (Anthropic's action, unchanged)"]
+        subgraph U["claude-code-security-review (Anthropic's action)"]
             D1["1. Claude reads the change<br/>and lists possible vulnerabilities"]
             D2["2. Known noise is dropped"]
             D3["3. Claude double-checks each one<br/>against Anthropic's default rules"]
@@ -30,7 +30,7 @@ flowchart TD
     B2 --> J["Finding is wrong:<br/>security team reviews<br/>and merges through a bypass"]
 ```
 
-A PR cannot merge while the review reports a HIGH severity finding, or while the review cannot run. MEDIUM and LOW findings are comments only. When a HIGH finding is wrong, the security team decides and merges through a recorded bypass. Blocking on HIGH findings is switched on during rollout, once the security team has measured how often HIGH findings are right.
+Once rollout is complete, a PR cannot merge while the review reports a HIGH severity finding, or while the review cannot run. During rollout, a review that cannot run lets the PR through with a warning. MEDIUM and LOW findings are comments only. When a HIGH finding is wrong, the security team decides and merges through a recorded bypass. Blocking on HIGH findings is switched on during rollout, once the security team has measured how often HIGH findings are right.
 
 ## How the review stays good
 
@@ -42,14 +42,14 @@ flowchart TD
     E --> T{"Recall and false positives<br/>within thresholds?"}
     T -- "no" --> X["Run fails, security team alerted"]
     X --> P
-    T -- "yes" --> R["Numbered release vX.Y.Z"]
-    R --> O["Org ruleset points at the new release"]
+    T -- "yes" --> R["Numbered release vX.Y.Z<br/>(started by hand)"]
+    R --> O["Org ruleset points at the new release<br/>(reviewed change)"]
     O --> PR["Reviews on every PR"]
     PR -- "finding disputed by an engineer" --> P
     PR -- "bug found later (bounty, incident, audit)" --> C
 ```
 
-Each missed bug becomes a test case, and each wrong finding can become a policy fix. A change reaches PRs only as a numbered release that passed the eval. The weekly run catches quality changes that come from outside the repository, such as a new Claude Code version.
+Each missed bug becomes a test case, and each wrong finding can become a policy fix. Cutting a release and pointing the ruleset at it are manual, reviewed steps. A change reaches PRs only as a numbered release that passed the eval. The weekly run catches quality changes that come from outside the repository, such as a new Claude Code version.
 
 ## Documents
 

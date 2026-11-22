@@ -15,7 +15,7 @@ The POC is built on a personal machine with a personal Claude subscription and n
 
 Assumptions to verify:
 
-- **A1.** `claude-3-5-haiku-20241022` still answers on the Messages API. Verify on the first eval run. The wrapper's verify step and the harness both fail loudly if it does not.
+- **A1 (checked, false).** `claude-3-5-haiku-20241022` was retired on 2026-02-19, so the upstream filter never runs ([0001](0001-composite-action-vs-custom-service.md), problem 1).
 - **A2.** When Claude Code has both a subscription login and `ANTHROPIC_API_KEY`, it uses the key. The harness sets the key explicitly.
 
 ## Considered options
@@ -31,7 +31,7 @@ Assumptions to verify:
 
 ## Decision
 
-Option A.
+Option A, for the upstream code. If [0001](0001-composite-action-vs-custom-service.md) chooses a headless reviewer that makes every model call through Claude Code, local runs can also use a subscription login, and production still uses the API key.
 
 | Mode | Credential | Source |
 |---|---|---|
@@ -39,7 +39,7 @@ Option A.
 | CI eval and PR review (POC) | `ANTHROPIC_API_KEY` | A repository secret in the POC repo |
 | Production | `ANTHROPIC_API_KEY` | An organization secret from the company Console org [org-name], in a workspace dedicated to the SIA review with spend limit [budget] |
 
-The eval judge also uses the key, through the same `anthropic` SDK version that upstream pins in its requirements, so cost accounting and authentication are the same for every model call.
+The eval judge also uses the key. Upstream requires `anthropic>=0.39.0`, an open range, so the harness pins an exact version of the SDK itself.
 
 ## Consequences
 

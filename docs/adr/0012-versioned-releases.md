@@ -49,7 +49,7 @@ Option C.
 ## Open questions
 
 - [decide: whether to turn on GitHub's immutable releases for the repository. Check that the feature is available on [GitHub plan].]
-- [decide: whether an org ruleset's required workflow can reference a tag rather than a branch or SHA. Verify against the GitHub documentation before the phase 3 rollout. If it cannot, reference the release's commit SHA and record the version next to it.]
+- [decide: whether an org ruleset's required workflow can reference a tag rather than a branch or SHA. Verify against the GitHub documentation before phase 1, the first phase that uses the ruleset. If it cannot, reference the release's commit SHA and record the version next to it.]
 
 ## Future opportunities
 

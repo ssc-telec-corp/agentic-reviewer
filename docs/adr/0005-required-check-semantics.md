@@ -70,6 +70,11 @@ The same path covers an emergency, for example a hotfix during an incident that 
 
 ## Open questions
 
+- [decide: what happens to fork PRs. Every fork PR needs a bypass, which is daily friction in repositories with outside contributors. Alternatively, forking is disabled org-wide.]
+- [decide: what happens on `merge_group` events. Upstream writes no results file for any event other than `pull_request`, so under fail-closed the merge queue would always fail.]
+- [decide: what happens with PRs too large to review. Upstream reviews only the first 100 changed files, and a very large diff may fail to download.]
+- [decide: whether a bypass record gets a type (`false-positive`, `emergency` or `unreviewable`), so that only real false positives count against precision ([0008](0008-measuring-precision.md)).]
+
 - [decide: the [SLA] for on-call decisions, and the [channel] engineers use to ask.]
 - [decide: whether GitHub's delegated bypass (an author requests a bypass and a security team member approves it in the GitHub UI) is available for branch rulesets on [GitHub plan]. If it is, step 2 can use it instead of on-call merging the PR themselves. Unknown.]
 - [decide: the HIGH precision required before setting `ASR_FAIL_ON_SEVERITY=high`. The starting proposal is [X]%, measured in phase 2 ([0009](0009-rollout-gates.md)).]

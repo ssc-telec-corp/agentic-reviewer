@@ -35,13 +35,20 @@ Option C. After the upstream step, the wrapper's verify step classifies the run:
 - **unfiltered**: `claudecode-error.log` contains `Claude API validation failed` or `Failed to initialize Claude client`.
 - **completed**: neither of the above.
 
-The workflow passes `fail-mode: ${{ vars.ASR_FAIL_MODE || 'closed' }}`. With `closed`, both error and unfiltered fail the check. With `open`, they pass with a warning annotation, and the job summary says "SIA review skipped: <reason>". `ASR_FAIL_MODE` is an organization variable, so changing it needs org admin rights and is recorded in the org audit log.
+The workflow passes `fail-mode: ${{ vars.ASR_FAIL_MODE || 'closed' }}`. With `closed`, both error and unfiltered fail the check. With `open`, they pass with a warning annotation, and the job summary says "SIA review skipped: <reason>". `ASR_FAIL_MODE` is an organization variable. Changing it needs org admin rights, and the org audit log records the change. A repository admin can still override it for their own repository ([0009](0009-rollout-gates.md)).
 
 ## Consequences
 
 - During an outage, on-call sets `ASR_FAIL_MODE=open`. Afterwards they set it back and re-run the skipped checks. The [runbook](../runbook.md) has the commands.
 - A repository admin can override `ASR_FAIL_MODE` for their own repository with a repository variable. See [0009](0009-rollout-gates.md) for this risk.
 - The verify step depends on upstream's file names and log strings. Bumping the upstream SHA must include a test run that exercises the error path.
+
+## Known gaps
+
+The classification above misses three ways the upstream code fails silently. They are covered by whichever reviewer-core option is chosen ([0001](0001-composite-action-vs-custom-service.md)):
+- Output that is not the expected JSON becomes an empty, successful review (problem 2 in 0001). Check that `analysis_summary.review_completed` is `true`.
+- A finding whose filter call failed is kept unfiltered (problem 3). Check for `Claude API failed` in `_filter_metadata.justification`.
+- If the upstream step exits with an error, for example when posting comments fails, later steps are skipped. The verify and summary steps need `if: always()`.
 
 ## Future opportunities
 

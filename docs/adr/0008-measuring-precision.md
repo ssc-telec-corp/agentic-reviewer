@@ -2,11 +2,11 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0005](0005-required-check-semantics.md), [0007](0007-eval-corpus-and-judge.md), [0009](0009-rollout-gates.md)
+- Related: [0001](0001-composite-action-vs-custom-service.md), [0003](0003-precedents-vs-rules.md), [0005](0005-required-check-semantics.md), [0007](0007-eval-corpus-and-judge.md), [0009](0009-rollout-gates.md)
 
 ## Context
 
-A corpus of historical vulnerabilities measures recall. It cannot measure precision, because every case in it is a true positive. Precision decides whether engineers read the bot's comments at all. The reference design held developer-facing comments back until a hand-labelled precision of 70% held over two weeks. Its stated reason was that most engineers will read a comment if seven of ten are valid.
+A corpus of historical vulnerabilities measures recall. It cannot measure precision, because every historical vulnerability in it is a true positive. The clean cases in the eval corpus ([0007](0007-eval-corpus-and-judge.md)) measure only false positives on a few simple changes. Precision decides whether engineers read the bot's comments at all. The reference design held developer-facing comments back until a hand-labelled precision of 70% held over two weeks. Its stated reason was that most engineers will read a comment if seven of ten are valid.
 
 ## Considered options
 
@@ -31,7 +31,7 @@ Use all three, each for a different job:
 
 - **Eval (Option A)** gates regressions. False positives on clean cases are capped in `eval/thresholds.yaml`. Findings on vulnerable cases that do not match the label are reported as "unmatched extras" for a human to label. They are not counted as false positives automatically, because they may be real.
 - **Shadow mode (Option C)** gates turning on comments ([0009](0009-rollout-gates.md)). The security team labels every finding from the pilot repos for two weeks. Comments go live when precision is at least 70% over that period.
-- **Author feedback (Option B)** monitors precision after launch. Every inline comment gets thumbs-up and thumbs-down reactions added by the bot as an invitation to react, and the footer asks the author to reply if the finding is wrong.
+- **Author feedback (Option B)** monitors precision after launch. The upstream comment script adds thumbs-up and thumbs-down reactions to every inline comment as an invitation to react. Counting must subtract the bot's own two reactions. A footer asking the author to reply when a finding is wrong needs a change to the comment script, which depends on [0001](0001-composite-action-vs-custom-service.md).
 - **Precision of HIGH findings** is tracked separately, because only HIGH findings block a merge ([0005](0005-required-check-semantics.md)). Phase 2 measures it before blocking turns on. Once blocking is on, every security bypass is a HIGH finding labelled wrong by a security engineer. That is the most reliable precision signal the system has.
 
 ## Consequences

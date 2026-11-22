@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0005](0005-required-check-semantics.md), [0006](0006-fail-open-vs-fail-closed.md), [0008](0008-measuring-precision.md)
+- Related: [0005](0005-required-check-semantics.md), [0006](0006-fail-open-vs-fail-closed.md), [0008](0008-measuring-precision.md), [0012](0012-versioned-releases.md)
 
 ## Context
 
@@ -54,6 +54,10 @@ In shadow mode the wrapper writes findings to the job summary, upstream uploads 
 - If repository-level overrides are seen in practice, move the controls to repository variables of the central `adaptive-security-reviewer` repository, which only [security-team] administers. The wrapper would read them through the GitHub API with a security-owned GitHub App token, and ignore variables in the reviewed repository.
 
 ## Open questions
+
+- [decide: how phase 4's exit is measured. Under fail-open, a review that could not run passes the check, so check failures undercount. Count the verify step's classifications instead ([0006](0006-fail-open-vs-fail-closed.md)).]
+- [decide: who reviews PRs that merged unreviewed while fail-open was in effect, and when.]
+- [decide: where shadow-mode findings are kept for two weeks of labelling. Upstream's result artifacts are deleted after 7 days.]
 
 - [decide: the pilot repos, N (minimum number of real corpus cases), X (minimum HIGH precision before blocking), and Y (maximum check failure rate).]
 - [decide: who checks for repository-level `ASR_*` overrides, for example in the periodic bypass review ([0005](0005-required-check-semantics.md)), and how often.]

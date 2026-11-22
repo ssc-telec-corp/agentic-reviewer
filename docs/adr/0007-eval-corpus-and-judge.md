@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0001](0001-composite-action-vs-custom-service.md), [0003](0003-precedents-vs-rules.md), [0004](0004-models-and-second-reviewer.md), [0008](0008-measuring-precision.md)
+- Related: [0001](0001-composite-action-vs-custom-service.md), [0003](0003-precedents-vs-rules.md), [0004](0004-models-and-second-reviewer.md), [0008](0008-measuring-precision.md), [0010](0010-local-vs-ci-authentication.md), [0011](0011-policy-layering.md), [0012](0012-versioned-releases.md)
 
 ## Context
 
@@ -21,7 +21,8 @@ A reviewer can describe a real bug in different words, cite a different line, or
 
 ### Option B: Run upstream `main()` locally, with PR data built from git
 
-- Pro: Same prompt, Claude Code call, regex exclusions, filter and output as the action, at the same pinned SHA. Only the two GitHub fetch methods are replaced.
+- Pro: Same prompt, Claude Code call, regex exclusions, filter and output as the action, at the same pinned SHA. The replacement for the GitHub fetch must also reproduce what that fetch does besides fetching: it drops generated files, keeps only the first 100 files, and requires `GITHUB_TOKEN` to be set. Otherwise the eval measures a different pipeline.
+- Note: this option assumes the upstream code is the reviewer core. If [0001](0001-composite-action-vs-custom-service.md) chooses a headless reviewer, the harness calls it directly with a code tree and a diff instead.
 - Con: It does not exercise the comment script or the action's shell steps. The CI PR runs cover those.
 
 ### Matching: exact vs LLM judge

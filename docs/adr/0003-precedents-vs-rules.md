@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0002](0002-classifier-vs-single-policy.md), [0007](0007-eval-corpus-and-judge.md), [0011](0011-policy-layering.md)
+- Related: [0001](0001-composite-action-vs-custom-service.md), [0002](0002-classifier-vs-single-policy.md), [0007](0007-eval-corpus-and-judge.md), [0008](0008-measuring-precision.md), [0011](0011-policy-layering.md)
 
 ## Context
 

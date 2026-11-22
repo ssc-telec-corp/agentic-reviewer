@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-22
-- Related: [0001](0001-composite-action-vs-custom-service.md), [0006](0006-fail-open-vs-fail-closed.md), [0007](0007-eval-corpus-and-judge.md)
+- Related: [0001](0001-composite-action-vs-custom-service.md), [0006](0006-fail-open-vs-fail-closed.md), [0007](0007-eval-corpus-and-judge.md), [0012](0012-versioned-releases.md)
 
 **In short:** every PR is reviewed by one model, `claude-opus-5-5`. We do not add a second reviewer model yet. Instead, the eval runs every test case on both Opus and Sonnet, and the results decide whether a second reviewer is worth its cost.
 
@@ -12,14 +12,14 @@ The reference design (Figma's) has every PR reviewed by two AI products from dif
 
 Our company uses only Anthropic models, so a second vendor is not an option. The closest substitute is a second Anthropic model: Sonnet instead of Opus, which is smaller, cheaper and differently tuned. Whether Sonnet catches bugs that Opus misses on our code is Unknown.
 
-The `claude-code-security-review` action has one setting for this, `claude-model`. It sets the model for both of the action's steps: the step that finds possible vulnerabilities, and the step that filters out false ones. Its default is the outdated `claude-opus-4-1-20250805`.
+The `claude-code-security-review` action has one setting for this, `claude-model`. It sets the model for both of the action's steps: the step that finds possible vulnerabilities, and the step that filters out false ones. Its default, `claude-opus-4-1-20250805`, was retired on 2026-08-05, so the setting must always be given.
 
 ## Considered options
 
 ### Option A: One model, Opus 5.5
 
 - Pro: The action supports it as it is; it is one setting.
-- Pro: Opus is the strongest Anthropic model for the job, so it has the best chance of finding real bugs.
+- Pro: Opus is Anthropic's default high-capability model. Claude Fable 5.1 is more capable, but costs 2.5 times as much per token ($10 / $50 per million input / output tokens, against $4 / $20).
 - Con: Every bug that Opus misses is missed. There is no second opinion.
 
 ### Option B: Two models, run the action twice per PR (Opus and Sonnet) and post what either finds
@@ -46,6 +46,8 @@ To decide on Option B with data instead of opinion, the eval runs every test cas
 - Changing the model is a behaviour change: it needs an eval run and a new minor release ([0012](0012-versioned-releases.md)).
 
 ## Open questions
+
+- [decide: how refusals are handled. Opus 5.5 runs safety classifiers, including one for cyber topics, and a security-review prompt can trigger a refusal. The upstream code does not handle a refusal: in the scan it looks like a clean review, and in the filter the finding is kept unfiltered ([0001](0001-composite-action-vs-custom-service.md), problems 2 and 3). The eval should count refusals per stage.]
 
 - [decide: adopt Option B if the two models together find at least [X] more of the known vulnerabilities than Opus alone, while false findings on clean changes stay within the threshold in `eval/thresholds.yaml`. The synthetic test set is too small to decide this, so it needs real cases ([0007](0007-eval-corpus-and-judge.md)).]
 
