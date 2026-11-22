@@ -17,7 +17,7 @@ The POC is built on a personal machine with a personal Claude subscription and n
 Assumptions to verify:
 
 - **A1 (checked, false).** `claude-3-5-haiku-20241022` was retired on 2026-02-19, so the upstream filter never runs ([0001](0001-composite-action-vs-custom-service.md), problem 1).
-- **A2.** When Claude Code has both a subscription login and `ANTHROPIC_API_KEY`, it uses the key. The harness sets the key explicitly.
+- **A2 (checked, true).** When `ANTHROPIC_API_KEY` is set, Claude Code uses it as an API key, even if `CLAUDE_CODE_OAUTH_TOKEN` is also set. In a test run on 2026-11-22, a `claude setup-token` subscription token was put in both. Claude Code sent it as an API key and got `401 Invalid API key`. The unmodified upstream action therefore cannot run on a Claude subscription in any configuration, because it refuses to start without `ANTHROPIC_API_KEY`.
 - **A3.** Claude Code (`claude -p`) accepts the WIF variables. The SDK and `ant` CLI documentation says they do the exchange. Whether Claude Code does is Unknown, and needs checking before WIF is used for the scan step.
 
 ## Considered options

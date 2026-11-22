@@ -26,6 +26,8 @@ It then posts the survivors as inline PR comments. It fetches the PR from the Gi
 7. **Credentials share the scan's environment.** The scan step holds `GITHUB_TOKEN` and the API key next to Claude Code, which reads files the PR author wrote. Only `Bash(ps:*)` is disallowed.
 8. **Unpinned installs.** It installs Claude Code from npm and its Python dependencies (for example `anthropic>=0.39.0`) without version pins.
 
+**Test run on 2026-11-22.** The unmodified action ran on a demo PR with a planted missing-authorization bug. Claude Code failed authentication (a subscription token cannot be used, see [0010](0010-local-vs-ci-authentication.md)). The filter's startup check returned `404 not_found_error` for `claude-3-5-haiku-20241022`. The job still passed, and the PR got no comments, which confirms problems 1 and 2 in a real run.
+
 **Maintenance evidence**, from the public GitHub pages on 2026-11-22:
 - No PR has been merged since 2026-02-11. Eleven PRs have been merged in total.
 - Problem 1 was reported on 2026-02-19 (issue #69), and in at least seven more issues since.
