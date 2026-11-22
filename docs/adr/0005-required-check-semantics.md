@@ -48,6 +48,12 @@ Option B.
 - With `high`, the check fails when the completed review reports at least one HIGH finding. The job summary and the failure message list those findings and link to the bypass process.
 - The check also fails when the review could not run ([0006](0006-fail-open-vs-fail-closed.md)), and for fork PRs, which GitHub runs without repository secrets, so the review cannot run.
 - The required check sits in its own ruleset, whose only bypass actor is [security-team]. A bypass then skips only this check, not other branch protections such as required approvals.
+- **The wrapper posts the comments, not upstream.** It calls upstream with `comment-pr: false`, reads upstream's `findings.json` after every run, and gives each finding a fingerprint. On every run, the posting step:
+  - posts only findings that are not already on the PR;
+  - replies "no longer reported in `<sha>`" to findings that disappeared, and resolves their threads;
+  - keeps one summary comment up to date, listing the current findings, or saying the latest review found none, and linking to the bypass process when a HIGH finding blocks the merge.
+
+  This closes the gaps described under "Known gaps in PR comments", and it is a prerequisite for blocking on HIGH findings. It also makes the comment format ours: the template, any footer, and whether reactions are added ([0008](0008-measuring-precision.md)).
 
 ## Bypass process
 
@@ -69,7 +75,7 @@ The upstream comment script, as observed in a test run ([0001](0001-composite-ac
 - **A clean re-review is silent.** Nothing on the PR says that a later review found nothing. The only record is the results artifact and the job summary.
 - **New findings on later pushes are not posted.** The comment script posts nothing if the bot has already commented on the PR. With `fail-on-severity: high`, a HIGH finding introduced in a later push would fail the check without appearing anywhere in the PR conversation, only in the job summary. Blocking should not be turned on ([0009](0009-rollout-gates.md), phase 3) until this is fixed.
 
-All three need a change to the comment script, which depends on [0001](0001-composite-action-vs-custom-service.md).
+The wrapper's own posting step, below, replaces upstream's comment script and closes all three gaps. It needs no change to the upstream code.
 
 ## Consequences
 
@@ -84,6 +90,7 @@ All three need a change to the comment script, which depends on [0001](0001-comp
 - [decide: what happens on `merge_group` events. Upstream writes no results file for any event other than `pull_request`, so under fail-closed the merge queue would always fail.]
 - [decide: what happens with PRs too large to review. Upstream reviews only the first 100 changed files, and a very large diff may fail to download.]
 - [decide: whether a bypass record gets a type (`false-positive`, `emergency` or `unreviewable`), so that only real false positives count against precision ([0008](0008-measuring-precision.md)).]
+- [decide: how a finding is matched across runs. The model rewords descriptions between runs, so the fingerprint cannot be the text. A candidate is file, category and a line window, with the risk of merging two different findings in the same area.]
 - [decide: the [SLA] for on-call decisions, and the [channel] engineers use to ask.]
 - [decide: whether GitHub's delegated bypass (an author requests a bypass and a security team member approves it in the GitHub UI) is available for branch rulesets on [GitHub plan]. If it is, step 2 can use it instead of on-call merging the PR themselves. Unknown.]
 - [decide: the HIGH precision required before setting `ASR_FAIL_ON_SEVERITY=high`. The starting proposal is [X]%, measured in phase 2 ([0009](0009-rollout-gates.md)).]
@@ -91,9 +98,3 @@ All three need a change to the comment script, which depends on [0001](0001-comp
 ## Future opportunities
 
 - **Option D for security engineers only**, if the bypass volume becomes a burden: stable finding fingerprints plus a dismissal command, checked against [security-team] membership.
-- **Comments that track the review across pushes**, closing the gaps above. Each finding gets a fingerprint. On every run the posting step:
-  - posts only findings that are not already on the PR;
-  - replies "no longer reported in `<sha>`" to findings that disappeared, and resolves their threads;
-  - keeps one summary comment up to date, listing the current findings, or saying the latest review found none, and linking to the bypass process when a HIGH finding blocks the merge.
-
-  This is a prerequisite for blocking on HIGH findings.

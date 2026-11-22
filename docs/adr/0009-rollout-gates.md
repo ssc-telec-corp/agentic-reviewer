@@ -24,7 +24,7 @@ Turning on an org-wide required check affects every engineer at once. A noisy re
 
 Option B. Three organization variables are the controls, so phases change without editing workflows:
 
-- `ASR_COMMENT_PR` (`true` or `false`) is passed to upstream's `comment-pr` input. `false` is shadow mode.
+- `ASR_COMMENT_PR` (`true` or `false`) switches the wrapper's posting step ([0005](0005-required-check-semantics.md)). `false` is shadow mode. Upstream's own commenting is always off.
 - `ASR_FAIL_ON_SEVERITY` (`none` or `high`) controls whether HIGH findings block the merge ([0005](0005-required-check-semantics.md)).
 - `ASR_FAIL_MODE` (`open` or `closed`) controls whether the check fails when the review could not run ([0006](0006-fail-open-vs-fail-closed.md)).
 

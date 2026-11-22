@@ -37,7 +37,7 @@ Use all three, each for a different job:
   - A thumbs-down does not say whether the finding is false, true but not worth fixing, or rated at the wrong severity.
   - Nothing reads the reactions until the aggregation in the open questions below is built.
 
-  Upstream has no setting to turn the reactions off. Removing them, or adding a footer that asks the author to reply when a finding is wrong, needs a change to the comment script, which depends on [0001](0001-composite-action-vs-custom-service.md). Hand labelling in shadow mode (Option C) and the bypass records ([0005](0005-required-check-semantics.md)) remain the reliable precision signals.
+  The wrapper now posts comments itself ([0005](0005-required-check-semantics.md)), so whether to add reactions, and a footer asking the author to reply when a finding is wrong, are its choices. [decide: keep the reactions, replace them with the footer, or both.] Hand labelling in shadow mode (Option C) and the bypass records ([0005](0005-required-check-semantics.md)) remain the reliable precision signals.
 - **Precision of HIGH findings** is tracked separately, because only HIGH findings block a merge ([0005](0005-required-check-semantics.md)). Phase 2 measures it before blocking turns on. Once blocking is on, every security bypass is a HIGH finding labelled wrong by a security engineer. That is the most reliable precision signal the system has.
 
 ## Consequences
