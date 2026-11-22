@@ -1,10 +1,10 @@
-# 0001. Reviewer core: wrap, copy or rebuild `claude-code-security-review` (open)
+# 0001. Reviewer core: copy or rebuild `claude-code-security-review` (open)
 
-- Status: Proposed, decision open
+- Status: Proposed, decision open between Options C and D
 - Date: 2026-11-22
 - Related: [0002](0002-classifier-vs-single-policy.md), [0003](0003-precedents-vs-rules.md), [0004](0004-models-and-second-reviewer.md), [0005](0005-required-check-semantics.md), [0006](0006-fail-open-vs-fail-closed.md), [0007](0007-eval-corpus-and-judge.md), [0008](0008-measuring-precision.md), [0010](0010-local-vs-ci-authentication.md), [0011](0011-policy-layering.md), [0012](0012-versioned-releases.md)
 
-**In short:** the reviewer core, meaning the code that turns a PR into findings, is not decided. Anthropic's `claude-code-security-review` action is the starting point, but it has bugs that break it today and shows no sign of maintenance. Four options are open, listed below. Everything else in this design (policy, eval, workflows, releases, rollout) is the same whichever option is chosen.
+**In short:** the reviewer core, meaning the code that turns a PR into findings, must be changed from Anthropic's `claude-code-security-review` action, because the action cannot meet the requirements below unchanged, and it shows no sign of maintenance. Using it unchanged (Option A) and a public GitHub fork (Option B) are ruled out. The open choice is between copying it into our repository and changing it (Option C) or building our own reviewer on headless Claude Code (Option D). Everything else in this design (policy, eval, workflows, releases, rollout) is the same whichever is chosen.
 
 ## Context
 
@@ -26,7 +26,16 @@ It then posts the survivors as inline PR comments. It fetches the PR from the Gi
 7. **Credentials share the scan's environment.** The scan step holds `GITHUB_TOKEN` and the API key next to Claude Code, which reads files the PR author wrote. Only `Bash(ps:*)` is disallowed.
 8. **Unpinned installs.** It installs Claude Code from npm and its Python dependencies (for example `anthropic>=0.39.0`) without version pins.
 
-**Test run on 2026-11-22.** The unmodified action ran on a demo PR with a planted missing-authorization bug. Claude Code failed authentication (a subscription token cannot be used, see [0010](0010-local-vs-ci-authentication.md)). The filter's startup check returned `404 not_found_error` for `claude-3-5-haiku-20241022`. The job still passed, and the PR got no comments, which confirms problems 1 and 2 in a real run. A second run, routed through OpenRouter with Sonnet 5.5 ([0010](0010-local-vs-ci-authentication.md)), completed the scan in about one minute of job time. It reported the planted bug as HIGH with the correct root cause and fix, plus one MEDIUM finding about support users resetting admin passwords. The filter was still off (problem 1), and both findings were posted unfiltered as inline comments. The job passed despite the HIGH finding.
+**Observed in test runs** on a demo PR with a planted vulnerability:
+- With a credential the API rejected, the scan failed, and the job still passed with no comments (problem 2).
+- The filter's startup check returned `404 not_found_error` for the retired model, so findings were posted unfiltered (problem 1).
+- With a working credential, the scan found the planted vulnerability and described its root cause and fix correctly.
+
+**Requirements the unchanged action cannot meet:**
+- **The false-positive filter runs.** This needs a code change (problem 1).
+- **Credentials come from workload identity federation, with no stored API key** ([0010](0010-local-vs-ci-authentication.md)). This needs a code change: the action refuses to start without `ANTHROPIC_API_KEY`, and it passes that value as an API key, which takes precedence over federation.
+- **A review that did not complete never looks like a clean one** ([0006](0006-fail-open-vs-fail-closed.md)). The wrapper can detect some cases from the action's output files, but the reliable fix is in the code (problems 2 and 3).
+- **Findings are tracked across pushes:** new findings are posted, and findings a later scan no longer reports are closed. The wrapper's own posting step can do this with the action's commenting switched off ([0005](0005-required-check-semantics.md)), so this one needs no change to the action itself.
 
 **Maintenance evidence**, from the public GitHub pages on 2026-11-22:
 - No PR has been merged since 2026-02-11. Eleven PRs have been merged in total.
@@ -42,12 +51,14 @@ It then posts the survivors as inline PR comments. It fetches the PR from the Gi
 - Pro: No code to own. The prompt, filter and PR commenting are used exactly as published.
 - Con: Problem 1 alone means the filter never runs. Problems 2 to 8 can only be worked around in wrapper steps around it, not fixed.
 - Con: The benefit of fixes arriving through SHA bumps does not exist while nothing is merged upstream.
+- **Ruled out:** it cannot meet the filter and federation requirements.
 
 ### Option B: GitHub fork of the upstream repository
 
 - Pro: Every problem can be fixed, and community PRs can be cherry-picked.
 - Con: A fork of a public repository must stay public on GitHub, so our patches and wiring would be public.
 - Con: A second repository with its own versioning, next to the wrapper.
+- **Ruled out:** the code would have to be public. Option C gives the same changes in a private repository.
 
 ### Option C: Copy upstream into our repository and change it step by step
 
@@ -55,7 +66,7 @@ It then posts the survivors as inline PR comments. It fetches the PR from the Gi
 - Pro: It can move gradually toward Option D, with each step checked by the eval:
   1. Fix problems 1, 2 and 6.
   2. Run Claude Code with `--restricted --safe-mode`, restricted tools and `--json-schema`.
-  3. Separate the credentials into different steps, and post new findings on later pushes.
+  3. Separate the credentials into different steps, and support federation for both the scan and the filter.
   4. Optionally, replace the per-finding API filter with a second Claude Code pass.
 - Con: We own about 1,400 lines of code we did not design.
 - Con: MIT attribution must be kept, and [decide: whether company legal must approve third-party code intake].
@@ -69,19 +80,19 @@ It then posts the survivors as inline PR comments. It fetches the PR from the Gi
   - `--fallback-model` for outages and `--max-budget-usd` to cap cost;
   - a `criteria_touched` field for the SIA record;
   - dropped candidates as structured output, which an adjudicator needs.
-- Pro: Runs on a subscription login locally and an API key in production, with no code change ([0010](0010-local-vs-ci-authentication.md)). This is where the reference design, Figma's, ended up.
+- Pro: Every model call goes through Claude Code, so one credential path serves all modes: a subscription login locally, and in CI a federated short-lived token passed to Claude Code as `ANTHROPIC_AUTH_TOKEN`, or an API key ([0010](0010-local-vs-ci-authentication.md)). This is where the reference design, Figma's, ended up.
 - Con: New code that has to be written and proven by the eval before anyone trusts it.
 - Con: The copied instructions can drift from upstream. It also depends on Claude Code CLI behaviour, so the CLI version must be pinned.
 
 ## Decision
 
-Not decided. [decide: Option B, C or D. Option A is not viable because of problem 1. The inputs to the decision are the maintenance evidence above, whether a working review is needed quickly or the long-term design matters more, and the company's rules for third-party code.]
+Options A and B are ruled out. [decide: Option C or D. The inputs to the decision are whether a working review is needed quickly (C starts from working code) or the long-term design matters more (D), how much of upstream's code the team is willing to own, and the company's rules for third-party code.]
 
-Until this is decided, the other ADRs describe the wrapper steps against upstream's interface (two instruction files, `claudecode-results.json`, `claudecode-error.log`). Options B and C keep that interface. Option D replaces it, and those ADRs would need updating.
+Until this is decided, the other ADRs describe the wrapper steps against upstream's interface (two instruction files, `claudecode-results.json`, `claudecode-error.log`). Option C keeps that interface. Option D replaces it, and those ADRs would need updating.
 
 ## Consequences
 
-- No reviewer can run on PRs until this is decided. With Option A, the filter stage is missing.
+- No reviewer that meets the requirements can run on PRs until Option C or D is built. The unchanged action can be run for experiments, without its filter.
 - The eval harness ([0007](0007-eval-corpus-and-judge.md)) can be built either way. Its input is a commit and its output is a list of findings.
 
 ## Future opportunities
