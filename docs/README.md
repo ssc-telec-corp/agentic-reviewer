@@ -2,6 +2,8 @@
 
 Every pull request in [org] gets an automated Security Impact Assessment (SIA). It replaces the SIA ticket and supplements, not replaces, the human code review every PR already gets. Engineers do nothing extra: the review starts when the PR is opened, posts findings as PR comments only when it has any, and reports one required check.
 
+The approach follows [How Figma stays ahead of vulnerabilities with agents](https://www.figma.com/blog/how-figma-stays-ahead-of-vulnerabilities-with-agents/). [design.md](design.md#background) says what this design takes from it and where it differs.
+
 ## What happens on a pull request
 
 ```mermaid

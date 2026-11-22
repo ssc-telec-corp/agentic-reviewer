@@ -6,6 +6,24 @@ Status: draft for review. It covers requirements, architecture and the contracts
 
 Every pull request in [org] gets an automated security review that replaces the Security Impact Assessment (SIA) ticket and supplements the human code review every PR already has. The system has one reviewer core, a command-line tool that turns a code change into findings. Three users call that core with the same contract: the GitHub workflow on PRs, the eval harness that measures quality, and engineers running it locally. Everything else (comments, blocking, releases, rollout) sits around that core and never inside it.
 
+## Background
+
+This design follows the approach Figma's security team described in [How Figma stays ahead of vulnerabilities with agents](https://www.figma.com/blog/how-figma-stays-ahead-of-vulnerabilities-with-agents/). The ADRs call it "the reference design". Figma started from Anthropic's `claude-code-security-review` action, tuned it with a policy written as precedents, measured it on a corpus of real vulnerabilities, and later moved it into its own service that runs Claude Code and a second vendor's agent on every PR.
+
+What this design takes from it:
+- **A policy of precedents,** each with its reasoning, that describes the company's systems and accepted risks ([0003](adr/0003-precedents-vs-rules.md)).
+- **Precision before recall.** Comments go live only once measured precision is high enough that engineers keep reading them, which Figma put at 70% ([0008](adr/0008-measuring-precision.md), [0009](adr/0009-rollout-gates.md)).
+- **An eval corpus of known vulnerabilities,** graded by an LLM judge and re-run when the policy or model changes ([0007](adr/0007-eval-corpus-and-judge.md)).
+- **A second look at discarded findings** (an "adjudicator"), as a future option ([0004](adr/0004-models-and-second-reviewer.md)).
+- **The review as a required check,** with retries and an explicit outage path ([0005](adr/0005-required-check-semantics.md), [0006](adr/0006-fail-open-vs-fail-closed.md)).
+- **Short, concrete comments,** and feedback from authors on every finding.
+
+Where this design differs, and why:
+- **Anthropic models only.** Figma runs two vendors' agents and posts what either finds. Here a second Anthropic model is measured before it is used ([0004](adr/0004-models-and-second-reviewer.md)).
+- **Findings can block the merge.** Figma decided not to block and tracked fix rates instead. Here CRITICAL and HIGH findings block, and an author's false-positive request releases the block at once ([0005](adr/0005-required-check-semantics.md)).
+- **No custom policy yet.** The review starts from upstream's rules. Company precedents are added once the project runs on [org]'s code ([0011](adr/0011-policy-layering.md)).
+- **Not yet covered:** auditing whole repositories, and steering coding agents with hooks while they write code. Both are in Figma's write-up and outside this design's scope.
+
 ## Requirements
 
 What the system has to achieve, independent of how. The mechanisms are under "How the requirements are met" below.
