@@ -25,6 +25,8 @@ What the system has to achieve, independent of how. The mechanisms are under "Ho
 - **R13.** Every PR keeps a record of the SIA criteria it touched, which replaces the ticket's checkboxes.
 - **R14.** Rollout steps and incident response (turning comments, blocking or fail-closed behaviour on and off) need no code release.
 - **R15.** The rules the reviewer applies are owned by the Adaptive Security team, and can be extended with company-specific knowledge.
+- **R16.** The Adaptive Security team can see what the reviewer reviewed and found across all repositories, assess the findings, and turn real vulnerabilities, missed ones and false alarms into eval cases.
+- **R17.** A PR author can report a finding as a false positive from the PR. The Adaptive Security team decides, the decision is recorded, and a dismissed finding is not reported or blocking again on that PR.
 
 ## Architecture
 
@@ -80,6 +82,8 @@ The reviewer core is the only component that calls a model. The PR integration a
 | R13 SIA record per PR | The review returns `criteria_touched`, written to the job summary and the result artifact | [0002](adr/0002-classifier-vs-single-policy.md) |
 | R14 No release for rollout or incidents | Organization variables switch comments, blocking and fail mode | [0009](adr/0009-rollout-gates.md) |
 | R15 Rules owned by security | Policy text in the central repository: upstream's reference rules, plus org precedents and repository overlays added by the Adaptive Security team | [0003](adr/0003-precedents-vs-rules.md), [0011](adr/0011-policy-layering.md) |
+| R16 Monitoring and assessment | Not designed yet. Candidates: the PR workflow sends each `result.json` to a central results store, and the Adaptive Security team assesses findings there; assessed findings are converted into corpus cases | see "Components still to design" |
+| R17 False-positive requests | Not designed yet. Candidates: the author replies to the finding with a fixed command; the Adaptive Security team approves or rejects it; the comment sync step remembers dismissed findings and stops reporting and blocking on them | see "Components still to design" |
 
 ## Components and contracts
 
@@ -142,6 +146,24 @@ Text in this repository: the reference rules from upstream's `security-review` c
 
 A release workflow runs the eval and tags `vX.Y.Z` only if the thresholds are met. The org ruleset requires the PR workflow at a pinned release. Organization variables switch comments, blocking and fail mode (R11, R14).
 
+### Components still to design
+
+Both add state that lives outside a single review run. The rest of the design keeps none.
+
+**Results store and assessment (R16).**
+- Where results go. Options: each PR workflow run sends its `result.json` to a central store, or a scheduled job collects the result artifacts from every repository. Either way, artifacts alone are not enough, because GitHub deletes them after their retention period. [decide: the store, and the credential the PR workflow uses to write to it.]
+- What is kept per review: repository, PR, commit, reviewer version (R11), model, cost, criteria touched, findings, and later the assessment and any false-positive request.
+- How the Adaptive Security team assesses findings, labelling each as a true or false positive. [decide: the tool, for example a queue of GitHub issues in this repository, or a small view over the store.]
+- How an assessed finding becomes an eval case: the eval corpus converter turns a commit, the finding's description and the expected result into a case file (R10).
+- This also gives precision from real PRs, which the eval alone cannot measure ([0008](adr/0008-measuring-precision.md)).
+
+**False-positive requests (R17).**
+- How the author raises one: for example, a reply on the finding's comment with a fixed command and a reason. The request is recorded in the results store and the Adaptive Security team is notified in [Adaptive Security team channel].
+- Who decides: a member of the Adaptive Security team, usually the rotation engineer. Checking that the approver belongs to the team needs a token that can read team membership, which the workflow's own token cannot do. [decide: a GitHub App owned by the Adaptive Security team, or another way to verify the approver.]
+- How a dismissal sticks: the comment sync step matches each new finding against the dismissed ones for that PR, by the same fingerprint it uses to track findings across pushes, and neither posts nor blocks on a match. Matching is the open problem already recorded in [0005](adr/0005-required-check-semantics.md): the model rewords findings between runs.
+- How it relates to the bypass in [0005](adr/0005-required-check-semantics.md): an approved dismissal removes the need for a bypass on that finding, so the bypass remains for emergencies and for findings that cannot be matched.
+- Every decision feeds back: approved dismissals count as false positives, rejected ones as confirmed findings, and repeated false positives lead to a policy precedent or an eval case.
+
 ## What is verified and what is not
 
 | Claim | Status |
@@ -156,7 +178,8 @@ A release workflow runs the eval and tags `vX.Y.Z` only if the thresholds are me
 | An org ruleset can require the workflow and allow a security-team bypass on [GitHub plan] | Not verified |
 | Claude Code accepts a federated short-lived token | Not verified; needs an Anthropic API organization |
 | Cost per review | Unknown |
+| Findings can be matched across runs well enough to keep dismissals and close resolved findings | Not verified |
 
 ## Next
 
-Validate the reviewer core first, because every other component depends on its contract: build the headless version against the contract above, run it on the existing demo PR and on a few more synthetic changes, and compare. Then test the PR integration's comment sync and the ruleset bypass on the demo repository. The ADRs are revised after that, to match what worked.
+Validate the reviewer core first, because every other component depends on its contract: build the headless version against the contract above, run it on the existing demo PR and on a few more synthetic changes, and compare. Then test the PR integration's comment sync and the ruleset bypass on the demo repository, including whether findings can be matched across runs, since the false-positive dismissals (R17) depend on it. The results store (R16) and the false-positive request flow (R17) are designed after that. The ADRs are revised after that, to match what worked.
