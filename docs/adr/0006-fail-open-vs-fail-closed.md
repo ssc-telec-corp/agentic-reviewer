@@ -22,7 +22,7 @@ With one vendor and no fallback model ([0004](0004-models-and-second-reviewer.md
 - Pro: No change merges unreviewed.
 - Con: An Anthropic outage halts every deploy in the org.
 
-### Option C: Fail closed by default; security on-call flips an org variable to fail open during an incident
+### Option C: Fail closed by default; the rotation engineer flips an org variable to fail open during an incident
 
 - Pro: Unreviewed merges happen only through a recorded human decision, and the run's job summary marks them for backfill.
 - Con: Someone must remember to flip the variable back.
@@ -39,7 +39,7 @@ The workflow passes `fail-mode: ${{ vars.ASR_FAIL_MODE || 'closed' }}`. With `cl
 
 ## Consequences
 
-- During an outage, on-call sets `ASR_FAIL_MODE=open`. Afterwards they set it back and re-run the skipped checks. The [runbook](../runbook.md) has the commands.
+- During an outage, the rotation engineer sets `ASR_FAIL_MODE=open`. Afterwards they set it back and re-run the skipped checks. The [runbook](../runbook.md) has the commands.
 - A repository admin can override `ASR_FAIL_MODE` for their own repository with a repository variable. See [0009](0009-rollout-gates.md) for this risk.
 - The verify step depends on upstream's file names and log strings. Bumping the upstream SHA must include a test run that exercises the error path.
 
@@ -54,4 +54,4 @@ The classification above misses three ways the upstream code fails silently. The
 
 - Retry with a fallback model before declaring an error ([0004](0004-models-and-second-reviewer.md)).
 - Automatic revert of `ASR_FAIL_MODE` after [N] hours.
-- [decide: who besides security on-call may flip the variable.]
+- [decide: who besides the rotation engineer may flip the variable.]

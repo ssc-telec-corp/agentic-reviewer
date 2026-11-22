@@ -22,12 +22,12 @@ flowchart TD
         H{"Any HIGH severity<br/>finding?"}
     end
 
-    E -- "no: API outage or error" --> G["Check fails<br/>(on-call can switch it<br/>to pass with a warning)"]
+    E -- "no: API outage or error" --> G["Check fails<br/>(the rotation engineer can<br/>switch it to pass with a warning)"]
     E -- "yes" --> H
     H -- "no" --> F["Findings posted as PR comments<br/>check passes, PR can merge"]
     H -- "yes" --> B2["Check fails, PR cannot merge"]
     B2 --> I["Engineer fixes the code and pushes<br/>(the review runs again)"]
-    B2 --> J["Finding is wrong:<br/>security team reviews<br/>and merges through a bypass"]
+    B2 --> J["Finding is wrong:<br/>the rotation engineer reviews<br/>and merges through a bypass"]
 ```
 
 Once rollout is complete, a PR cannot merge while the review reports a HIGH severity finding, or while the review cannot run. During rollout, a review that cannot run lets the PR through with a warning. MEDIUM and LOW findings are comments only. When a HIGH finding is wrong, the security team decides and merges through a recorded bypass. Blocking on HIGH findings is switched on during rollout, once the security team has measured how often HIGH findings are right.

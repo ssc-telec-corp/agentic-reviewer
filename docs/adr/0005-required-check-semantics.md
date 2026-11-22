@@ -60,9 +60,9 @@ Option B.
 When the author believes a HIGH finding is wrong:
 
 1. **The author replies to the finding's comment** with why it is wrong, and asks for a security review in [channel] or by requesting review from the Adaptive Security team. Nothing else changes for the engineer.
-2. **Security on-call decides within [SLA].** If the finding is real, the author fixes it, and the next push re-runs the review. If the finding is wrong, on-call merges the PR through the ruleset bypass.
-3. **On-call records the decision** in a PR comment with a fixed form: `ASR bypass: <finding title> | reason: <why it is wrong> | follow-up: <link to policy PR or eval case, or none>`.
-4. **Every bypass is a labelled false positive.** It counts against precision ([0008](0008-measuring-precision.md)). When the same kind of mistake repeats, on-call opens a policy PR with a new precedent, so the reviewer stops raising it.
+2. **The rotation engineer decides within [SLA].** If the finding is real, the author fixes it, and the next push re-runs the review. If the finding is wrong, the rotation engineer merges the PR through the ruleset bypass.
+3. **The rotation engineer records the decision** in a PR comment with a fixed form: `ASR bypass: <finding title> | reason: <why it is wrong> | follow-up: <link to policy PR or eval case, or none>`.
+4. **Every bypass is a labelled false positive.** It counts against precision ([0008](0008-measuring-precision.md)). When the same kind of mistake repeats, the rotation engineer opens a policy PR with a new precedent, so the reviewer stops raising it.
 5. **[security-lead] reviews all bypasses every [period]**, using GitHub's ruleset insights or the org audit log, and checks that each has a recorded reason.
 
 The same path covers an emergency, for example a hotfix during an incident that the reviewer blocks. In that case the reason records the incident.
@@ -79,7 +79,7 @@ The wrapper's own posting step, below, replaces upstream's comment script and cl
 
 ## Consequences
 
-- Engineers whose PR is wrongly blocked wait for security on-call. The [SLA] and the on-call load are set by HIGH precision, which phase 2 of the rollout measures before blocking turns on.
+- Engineers whose PR is wrongly blocked wait for the rotation engineer. The [SLA] and the rotation engineer's load are set by HIGH precision, which phase 2 of the rollout measures before blocking turns on.
 - A repository admin can override `ASR_FAIL_ON_SEVERITY` for their own repository with a repository variable, which switches off blocking there. [0009](0009-rollout-gates.md) describes this risk and how overrides are detected.
 - Since a fixed finding stops blocking on the next push, "fixed" means "the reviewer no longer reports it". A fix that only rewords the code so the model stops noticing would also pass. Human code review remains the control for that.
 - The check is red on every bypassed PR, so "red check, merged" is the signal the periodic review looks for.
@@ -91,8 +91,8 @@ The wrapper's own posting step, below, replaces upstream's comment script and cl
 - [decide: what happens with PRs too large to review. Upstream reviews only the first 100 changed files, and a very large diff may fail to download.]
 - [decide: whether a bypass record gets a type (`false-positive`, `emergency` or `unreviewable`), so that only real false positives count against precision ([0008](0008-measuring-precision.md)).]
 - [decide: how a finding is matched across runs. The model rewords descriptions between runs, so the fingerprint cannot be the text. A candidate is file, category and a line window, with the risk of merging two different findings in the same area.]
-- [decide: the [SLA] for on-call decisions, and the [channel] engineers use to ask.]
-- [decide: whether GitHub's delegated bypass (an author requests a bypass and a security team member approves it in the GitHub UI) is available for branch rulesets on [GitHub plan]. If it is, step 2 can use it instead of on-call merging the PR themselves. Unknown.]
+- [decide: the [SLA] for the rotation engineer's decisions, and the [channel] engineers use to ask.]
+- [decide: whether GitHub's delegated bypass (an author requests a bypass and a security team member approves it in the GitHub UI) is available for branch rulesets on [GitHub plan]. If it is, step 2 can use it instead of the rotation engineer merging the PR themselves. Unknown.]
 - [decide: the HIGH precision required before setting `ASR_FAIL_ON_SEVERITY=high`. The starting proposal is [X]%, measured in phase 2 ([0009](0009-rollout-gates.md)).]
 
 ## Future opportunities
