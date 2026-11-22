@@ -3,12 +3,5 @@ name: UI / frontend changes
 touches: Browser code, templates, HTML rendering, Content-Security-Policy and other browser-facing response headers.
 precedents:
   - id: FE-HTML-SINKS
-    statement: User-controlled text must reach the DOM as text (textContent, framework text binding). Writing it through innerHTML, outerHTML, insertAdjacentHTML, document.write, dangerouslySetInnerHTML or v-html is a finding, including through an escaping helper that does not escape quotes as well as <, > and &.
-    reason: Content shared between users makes injected HTML run in another user's session. A CSP limits script execution but not injected forms and links.
-    example: React and Vue text bindings are safe and are not findings.
-  - id: FE-CSP
-    statement: Adding 'unsafe-inline', 'unsafe-eval', a wildcard, a scheme-only source or a third-party host to script-src is a finding.
-    reason: A weaker script-src turns every HTML-injection bug into full XSS.
-  - id: FE-TOKENS-IN-JS
-    statement: Storing session or access tokens in localStorage, sessionStorage or other script-readable places is a finding when the service otherwise uses HttpOnly cookies.
-    reason: Any script injection can read tokens stored where script can reach them.
+    statement: User-controlled text written to the DOM through innerHTML, outerHTML, insertAdjacentHTML or document.write is a finding, including when it passes through an escaping helper that does not escape quotes as well as <, > and &.
+    reason: Content shared between users makes injected HTML run in another user's session. Unlike React's default text rendering, these browser APIs parse HTML.

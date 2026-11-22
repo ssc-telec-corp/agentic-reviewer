@@ -2,12 +2,6 @@ id: dependencies
 name: Third-party dependencies
 touches: Package manifests, lock files, package-source configuration (nuget.config, .npmrc, pip.conf), and tools or images fetched during builds.
 precedents:
-  - id: DEP-SOURCES
-    statement: Packages come from the public registry and from [internal feed URL], which may serve only the [internal package prefix] namespace. Adding another source, an http:// source, or mapping more patterns to a non-public source is a finding.
+  - id: DEP-NEW-SOURCES
+    statement: Adding a package source, an http:// source, or mapping package names to a source other than the public registry and [internal feed URL] is a finding. This is about where packages are fetched from, not about depending on internal packages, which is fine.
     reason: With several sources and no namespace mapping, anyone who publishes a same-named package on the other source gets code into the build (dependency confusion).
-  - id: DEP-EXACT-VERSIONS
-    statement: Direct dependencies use exact versions, or a lock file that pins them. Floating versions and open ranges are findings.
-    reason: A floating version brings unreviewed code into production with no diff.
-  - id: DEP-NEW-PACKAGES
-    statement: Adding a well-known package from the public registry at an exact version is not a finding. Known CVEs are tracked by [dependency scanner], not by this review.
-    reason: The review cannot check vulnerability databases reliably, and repeating the scanner only adds noise.

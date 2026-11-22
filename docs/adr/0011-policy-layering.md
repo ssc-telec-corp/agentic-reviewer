@@ -6,9 +6,9 @@
 
 ## Context
 
-The review runs on every repository in [org], across different stacks and owners. Some precedents hold everywhere. For example: "environment variables are trusted", "client-side checks are not security", "floating dependency versions are findings". Others belong to one system. For example: "the notes service makes outbound calls only through OutboundClient", or "/internal is restricted by source IP". The security team cannot maintain system-specific knowledge for every repository, and teams cannot be allowed to weaken the org rules for their own code.
+The review runs on every repository in [org], across different stacks and owners. Upstream's default rules already hold everywhere, for example "environment variables are trusted" and "client-side checks are not security". Some of our additions also hold everywhere, for example "a webhook must verify its caller". Others belong to one system. For example: "the notes service makes outbound calls only through OutboundClient", or "/internal is restricted by source IP". The security team cannot maintain system-specific knowledge for every repository, and teams cannot be allowed to weaken the org rules for their own code.
 
-The upstream action takes the instructions as two text files per run, `custom-security-scan-instructions` and `false-positive-filtering-instructions`. The filtering file replaces the upstream defaults instead of adding to them.
+The upstream action takes the instructions as two text files per run, `custom-security-scan-instructions` and `false-positive-filtering-instructions`. The filtering file replaces the upstream defaults instead of adding to them, so keeping the defaults means copying them into the file we supply.
 
 ## Considered options
 
@@ -33,11 +33,12 @@ The upstream action takes the instructions as two text files per run, `custom-se
 Option C.
 
 - `policy/base/` in the reviewer repo holds the org policy: global precedents, plus one file per SIA criterion with the criterion's id, name, what it covers, and its precedents. It is stack-agnostic, owned by [security-team], and changed only through PRs that include an eval run.
-- `.github/adaptive-security-reviewer.yaml` in a target repository is optional. It may contain `system` (a few lines describing the service), `trust_boundaries`, and `precedents`, each tagged with a criterion id. It cannot remove or override base precedents. Overlay precedents are rendered after the base ones, under the heading "Repository-specific".
+- **Upstream's default rules come first and win.** The org base policy and the overlays only add to them. A precedent that repeats an upstream default is not added, and one that contradicts an upstream default is removed or reworded ([0003](0003-precedents-vs-rules.md)).
+- `.github/adaptive-security-reviewer.yaml` in a target repository is optional. It may contain `system` (a few lines describing the service), `trust_boundaries`, and `precedents`, each tagged with a criterion id. An overlay can only add precedents. A precedent that in effect exempts a class of findings ("X is protected upstream, not a finding") is still an addition in form, so [security-team] approves overlay changes through CODEOWNERS, and the ruleset requires code-owner review. Overlay precedents are rendered after the base ones, under the heading "Repository-specific".
 - The wrapper reads the overlay with `git show <base-sha>:.github/adaptive-security-reviewer.yaml`. A missing file means no overlay.
 - Rendering:
   - **Scan instructions:** the criteria list with the instruction to set `category` to the criterion id, then the system description and trust boundaries, then all precedents.
-  - **Filtering instructions:** upstream's default filtering text, then the same precedents.
+  - **Filtering instructions:** upstream's default filtering text, unchanged, then the line "Additional precedents for [org]. They add to the rules above; where they seem to conflict, the rules above apply.", then the same precedents.
 - The upstream default text is stored in `policy/base/upstream-filter-defaults.txt`. A test compares it with the text produced by upstream's `_generate_single_finding_prompt` at the pinned SHA, and fails after an upstream bump until the copy is updated.
 - `python -m adaptive_security_reviewer validate-policy` checks both layers, and runs in CI for the reviewer repo and for any repo that has an overlay.
 

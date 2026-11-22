@@ -9,9 +9,9 @@ precedents:
   - id: AUTHN-ONE-PATH
     statement: Identity comes only from the service's authentication handler. Headers, query parameters or config flags that set a user or role directly are findings, even when labelled as debug features.
     reason: Debug paths ship to production with the committed config (G-COMMITTED-CONFIG-IS-PRODUCTION).
-  - id: AUTHN-PASSWORDS
-    statement: Login failures must not reveal whether an account exists. Password comparison happens only inside the password-hashing component, in constant time.
-    reason: Different errors or timings for unknown accounts reveal which emails are registered.
+  - id: AUTHN-ACCOUNT-ENUMERATION
+    statement: Login failures must not reveal, through a different status code or message, whether an account exists.
+    reason: Distinct errors for unknown accounts tell an attacker which emails are registered.
   - id: AUTHN-SESSION-COOKIES
-    statement: Session cookies stay HttpOnly and Secure, with SameSite Lax or Strict. SameSite=None is acceptable only if CORS still allows only listed origins.
-    reason: SameSite and the CORS allowlist together stop other sites from making authenticated requests.
+    statement: Changing a session cookie to SameSite=None while CORS allows credentials from origins other than a fixed list is a finding.
+    reason: Together, the two changes let any website make authenticated requests and read the responses.

@@ -11,7 +11,7 @@ The policy tells the reviewer what counts as a vulnerability in our systems: tru
 - A rule: "Do not report SSRF in the reporting service."
 - A precedent: "The reporting service makes outbound requests only through its allowlisted client. Requests built from user input are acceptable when they go through it, and a request that bypasses it is a finding."
 
-The upstream action already uses precedents in its default filtering instructions: 17 of them, each a sentence with its reasoning. On top of those it applies regex hard exclusions in `findings_filter.py`. The regexes match keywords. For example, any finding that mentions "out of bounds" is dropped unless the file ends in `.c`, `.cc`, `.cpp` or `.h`, whatever the finding says. They cannot be turned off through an action input.
+The upstream action already uses precedents in its default filtering instructions: 17 of them, most with a sentence of reasoning. On top of those it applies regex hard exclusions in `findings_filter.py`. The regexes match keywords. For example, any finding that mentions "out of bounds" is dropped unless the file ends in `.c`, `.cc`, `.cpp` or `.h`, whatever the finding says. They cannot be turned off through an action input.
 
 ## Considered options
 
@@ -31,6 +31,8 @@ The upstream action already uses precedents in its default filtering instruction
 Option B. Every precedent has an `id`, a `statement` and a `reason`, and may have an `example`. The validator fails on a missing statement or reason, or on a duplicate id. The example is optional so that small teams can maintain repo overlays ([0011](0011-policy-layering.md)). Base-policy precedents should include an example.
 
 Precedents describe architecture and recurring decisions, not individual eval cases. A precedent that names a corpus case turns the eval into a memory test, and reviewers of policy changes reject it.
+
+Our precedents add to upstream's defaults and never repeat or contradict them, because upstream's defaults come first and win ([0011](0011-policy-layering.md)). Before a precedent is added, its author checks it against the default text in `policy/base/upstream-filter-defaults.txt`.
 
 The upstream regex exclusions stay active. Turning them off would require a fork ([0001](0001-composite-action-vs-custom-service.md)).
 

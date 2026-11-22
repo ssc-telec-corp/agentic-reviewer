@@ -3,11 +3,8 @@ name: Significant changes
 touches: New external integrations (webhooks, partner APIs), new data stores or file access, new classes of endpoint, or refactors of how endpoints, auth or configuration are wired.
 precedents:
   - id: SIG-INBOUND-INTEGRATIONS
-    statement: A new endpoint called by an outside system (a webhook or callback) must verify the caller, with a signature or a secret compared in constant time, before acting on the payload. A PR note saying the partner's IP is allowlisted counts only if code enforces it.
+    statement: A new endpoint called by an outside system (a webhook or callback) must verify the caller, with a signature or a shared secret, before acting on the payload. A PR note saying the partner's IP is allowlisted counts only if code enforces it.
     reason: An unverified webhook is an anonymous endpoint that changes state based on attacker-supplied data.
-  - id: SIG-FILE-PATHS
-    statement: File paths built from request data must be reduced to a file name or checked against an allowlist, and the resolved path must be verified to lie under the intended directory.
-    reason: Traversal lets attackers read or overwrite application files and secrets.
   - id: SIG-REFACTOR-EQUIVALENCE
-    statement: For refactors of endpoint registration, policies, DTO mapping or config binding, compare the security-relevant behaviour before and after (which check protects each route, which fields each response contains, which config keys are read). Report any difference, even if the PR calls it a pure refactor.
+    statement: For refactors of endpoint registration, policies, response mapping or config binding, compare the security-relevant behaviour before and after (which check protects each route, which fields each response contains, which config keys are read). Report any difference, even if the PR calls it a pure refactor.
     reason: Large mechanical diffs get light human review, so a one-token regression inside one is easy to merge.
