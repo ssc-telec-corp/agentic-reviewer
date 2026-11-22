@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-23
-- Related: [0001](0001-reviewer-core.md), [0006](0006-fail-open-vs-fail-closed.md), [0008](0008-measuring-precision.md), [0009](0009-rollout-gates.md), [0011](0011-policy-layering.md)
+- Related: [0001](0001-reviewer-core.md), [0002](0002-classifier-vs-single-policy.md), [0006](0006-fail-open-vs-fail-closed.md), [0008](0008-measuring-precision.md), [0009](0009-rollout-gates.md), [0011](0011-policy-layering.md)
 
 **In short:** a PR cannot merge while the review reports a HIGH severity finding. MEDIUM and LOW findings are comments only. When a HIGH finding is wrong, the security team merges the PR through a ruleset bypass, following the process below. Blocking turns on only after the rollout has measured how often HIGH findings are right.
 
@@ -51,7 +51,7 @@ Option B.
 - **The wrapper posts the comments, not upstream.** It calls upstream with `comment-pr: false`, reads upstream's `findings.json` after every run, and gives each finding a fingerprint. On every run, the posting step:
   - posts only findings that are not already on the PR;
   - replies "no longer reported in `<sha>`" to findings that disappeared, and resolves their threads;
-  - keeps one summary comment up to date, listing the current findings, or saying the latest review found none, and linking to the bypass process when a HIGH finding blocks the merge.
+  - keeps one summary comment up to date once a PR has had findings: it lists the current findings, says when all of them are resolved, and links to the bypass process when a HIGH finding blocks the merge. A PR that never had findings gets no comment ([0002](0002-classifier-vs-single-policy.md)).
 
   This closes the gaps described under "Known gaps in PR comments", and it is a prerequisite for blocking on HIGH findings. It also makes the comment format ours: the template, any footer, and whether reactions are added ([0008](0008-measuring-precision.md)).
 

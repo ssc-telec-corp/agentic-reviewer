@@ -1,6 +1,6 @@
 # adaptive-security-reviewer
 
-Every pull request in [org] gets an automated Security Impact Assessment (SIA). It replaces the SIA ticket and the manual security review. Engineers do nothing extra: the review starts when the PR is opened, posts its findings as PR comments, and reports one required check.
+Every pull request in [org] gets an automated Security Impact Assessment (SIA). It replaces the SIA ticket and supplements, not replaces, the human code review every PR already gets. Engineers do nothing extra: the review starts when the PR is opened, posts findings as PR comments only when it has any, and reports one required check.
 
 ## What happens on a pull request
 
