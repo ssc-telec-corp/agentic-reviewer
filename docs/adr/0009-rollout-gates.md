@@ -25,7 +25,7 @@ Turning on an org-wide required check affects every engineer at once. A noisy re
 Option B. Three organization variables are the controls, so phases change without editing workflows:
 
 - `ASR_COMMENT_PR` (`true` or `false`) switches the wrapper's posting step ([0005](0005-required-check-semantics.md)). `false` is shadow mode. Upstream's own commenting is always off.
-- `ASR_FAIL_ON_SEVERITY` (`none` or `high`) controls whether HIGH findings block the merge ([0005](0005-required-check-semantics.md)).
+- `ASR_FAIL_ON_SEVERITY` (`none` or `high`) controls whether CRITICAL and HIGH findings block the merge ([0005](0005-required-check-semantics.md)).
 - `ASR_FAIL_MODE` (`open` or `closed`) controls whether the check fails when the review could not run ([0006](0006-fail-open-vs-fail-closed.md)).
 
 A repository variable with the same name overrides the organization variable, which is how a phase applies to the pilot repos only.
@@ -34,9 +34,9 @@ A repository variable with the same name overrides the organization variable, wh
 |---|---|---|---|
 | 0. Baseline | Eval corpus only | n/a | Corpus contains at least [N] real cases; gate model meets `eval/thresholds.yaml` |
 | 1. Shadow | [pilot repos], ruleset in evaluate mode | comments off, blocking `none`, fail mode `open` | 2 weeks of findings labelled; precision at least 70% ([0008](0008-measuring-precision.md)) |
-| 2. Comments | [pilot repos], ruleset active | comments on, blocking `none`, fail mode `open` | 2 more weeks at least 70% precision from author feedback; precision of HIGH findings at least [X]% |
+| 2. Comments | [pilot repos], ruleset active | comments on, blocking `none`, fail mode `open` | 2 more weeks at least 70% precision from author feedback; precision of CRITICAL and HIGH findings at least [X]% |
 | 3. Blocking on pilots | [pilot repos] | comments on, blocking `high`, fail mode `open` | 2 weeks with every false-positive request reviewed ([0005](0005-required-check-semantics.md)), and every request and bypass recorded |
-| 4. Org-wide | All repos, ruleset active | comments on, blocking `high`, fail mode `open` | Failure rate of the check, excluding HIGH findings, below [Y]% of runs over 2 weeks; manual SIA retired |
+| 4. Org-wide | All repos, ruleset active | comments on, blocking `high`, fail mode `open` | Failure rate of the check, excluding CRITICAL and HIGH findings, below [Y]% of runs over 2 weeks; manual SIA retired |
 | 5. Fail closed | All repos | fail mode `closed` | n/a (steady state) |
 
 In shadow mode the wrapper writes findings to the job summary, upstream uploads its result artifact, and nothing is posted on the PR. The manual SIA keeps running until the exit of phase 4.
@@ -45,7 +45,7 @@ In shadow mode the wrapper writes findings to the job summary, upstream uploads 
 
 - Phase 1 uses the ruleset's evaluate mode, so the check reports results without blocking. Whether evaluate mode is available for required workflows on our GitHub plan is Unknown, and has to be checked against the GitHub documentation for [GitHub plan].
 - Phases 1 to 4 run fail-open, and the code default (closed) applies only from phase 5.
-- HIGH findings block a merge only from phase 3, after phase 2 has measured how often they are right.
+- CRITICAL and HIGH findings block a merge only from phase 3, after phase 2 has measured how often they are right.
 - Organization variables are not accessible to private repositories on GitHub Free, according to GitHub's documentation. The controls therefore assume [GitHub plan] is a paid plan.
 - A repository variable overrides an organization variable with the same name. That is how pilot repos get their own settings, but it also means any repository admin can set `ASR_FAIL_ON_SEVERITY=none` or `ASR_FAIL_MODE=open` on their own repository and switch off blocking for their own PRs. The wrapper writes the values it used to every run's job summary, so an override is visible after the fact, but nothing prevents it.
 
@@ -59,5 +59,5 @@ In shadow mode the wrapper writes findings to the job summary, upstream uploads 
 - [decide: who reviews PRs that merged unreviewed while fail-open was in effect, and when.]
 - [decide: where shadow-mode findings are kept for two weeks of labelling. Upstream's result artifacts are deleted after 7 days.]
 
-- [decide: the pilot repos, N (minimum number of real corpus cases), X (minimum HIGH precision before blocking), and Y (maximum check failure rate).]
+- [decide: the pilot repos, N (minimum number of real corpus cases), X (minimum CRITICAL and HIGH precision before blocking), and Y (maximum check failure rate).]
 - [decide: who checks for repository-level `ASR_*` overrides, for example in the periodic bypass review ([0005](0005-required-check-semantics.md)), and how often.]

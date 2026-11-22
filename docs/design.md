@@ -15,7 +15,7 @@ What the system has to achieve, independent of how. The mechanisms are under "Ho
 - **R3.** The review supplements the human code review every PR already gets. It does not replace it.
 - **R4.** The reviewer speaks only when it has something to say. A PR without findings gets no comment.
 - **R5.** What the PR shows is current. A finding introduced by a later push appears, and a finding that was fixed is marked resolved.
-- **R6.** A change with a serious vulnerability does not merge unnoticed, and nobody waits on another person to unblock their PR. A HIGH finding blocks until the author fixes it or disputes it. Disputing it releases the block at once, and the Adaptive Security team reviews the dispute afterwards.
+- **R6.** A change with a serious vulnerability does not merge unnoticed, and nobody waits on another person to unblock their PR. A CRITICAL or HIGH finding blocks until the author fixes it or disputes it. Disputing it releases the block at once, and the Adaptive Security team reviews the dispute afterwards.
 - **R7.** A review that did not happen is never mistaken for a clean review.
 - **R8.** No long-lived model credential exists that could leak.
 - **R9.** Code under review cannot change how it is reviewed, or reach the reviewer's credentials.
@@ -38,7 +38,7 @@ flowchart TD
     subgraph INT["PR integration (GitHub workflow)"]
         PREP["Prepare: diff, clean checkout,<br/>short-lived credential"]
         SYNC["Sync PR comments:<br/>post new, close resolved"]
-        GATE{"Review completed?<br/>Any HIGH finding?"}
+        GATE{"Review completed?<br/>Any CRITICAL or HIGH finding?"}
     end
 
     subgraph CORE["Reviewer core (one command-line tool)"]
@@ -55,8 +55,8 @@ flowchart TD
     RS --> PREP --> REV
     POL --> REV
     REV -- "result.json" --> SYNC --> GATE
-    GATE -- "completed, no HIGH" --> OK["Check passes"]
-    GATE -- "HIGH finding or not completed" --> FAIL["Check fails<br/>(security team can bypass)"]
+    GATE -- "completed, no CRITICAL or HIGH" --> OK["Check passes"]
+    GATE -- "CRITICAL or HIGH finding, or not completed" --> FAIL["Check fails<br/>(fix it, or raise a false-positive request)"]
     CORP --> REV
     REV -- "result.json" --> REP
     REP -- "thresholds met: release" --> RS
@@ -73,7 +73,7 @@ The reviewer core is the only component that calls a model. The PR integration a
 | R3 Supplements human review | Existing review requirements stay unchanged. The reviewer does not request reviewers | [0002](adr/0002-classifier-vs-single-policy.md) |
 | R4 Speaks only with findings | Comments are posted only for findings. The SIA criteria go to the job summary | [0002](adr/0002-classifier-vs-single-policy.md), [0005](adr/0005-required-check-semantics.md) |
 | R5 PR shows the current state | The comment sync step posts new findings and resolves fixed ones | [0005](adr/0005-required-check-semantics.md) |
-| R6 Serious vulnerabilities do not merge unnoticed; nobody waits on a person | HIGH findings fail the required check. A fix, or a false-positive request from the author, ends the block. A bypass by the Adaptive Security team remains for emergencies | [0005](adr/0005-required-check-semantics.md) |
+| R6 Serious vulnerabilities do not merge unnoticed; nobody waits on a person | CRITICAL and HIGH findings fail the required check. A fix, or a false-positive request from the author, ends the block. A bypass by the Adaptive Security team remains for emergencies | [0005](adr/0005-required-check-semantics.md) |
 | R7 No silent failure | The core returns `status: error` and exit code 3. The check fails closed, with an org switch for outages | [0006](adr/0006-fail-open-vs-fail-closed.md) |
 | R8 No long-lived credential | Workload identity federation: a short-lived token per job | [0010](adr/0010-local-vs-ci-authentication.md) |
 | R9 Code cannot steer the reviewer | Agent configuration is deleted before the review, Claude Code runs in restricted mode, and the credential is kept out of steps that hold the GitHub token | [0001](adr/0001-reviewer-core.md) |
@@ -110,7 +110,7 @@ One command-line tool. It does not know about GitHub.
   ],
   "findings": [
     {
-      "severity": "HIGH",
+      "severity": "CRITICAL",
       "criterion": "authorization",
       "file": "src/Endpoints/SupportEndpoints.cs",
       "line": 12,
@@ -126,6 +126,19 @@ One command-line tool. It does not know about GitHub.
 
 When `status` is `error`, `findings` is empty and an `error` field says why. Nothing downstream treats an error as a clean review (R7).
 
+### Severity scale
+
+The reviewer rates every finding on four levels. CRITICAL and HIGH block the merge (R6). MEDIUM and LOW are comments only.
+
+| Severity | Meaning | Example |
+|---|---|---|
+| CRITICAL | Exploitable remotely by an anonymous user or any logged-in user, with no special conditions, leading to remote code execution, takeover of other users' or admin accounts, or exposure of many users' data | Any logged-in user can reset any other user's password |
+| HIGH | Directly exploitable, but limited by a precondition (a specific role, a non-default configuration, user interaction) or by impact (one user's data, one tenant) | A support user can read one customer's notes they should not see |
+| MEDIUM | Exploitable only under specific conditions, with significant impact | A redirect to an attacker site that needs a crafted link and a logged-in victim |
+| LOW | Defence in depth, or low impact | A missing security header with no attack path shown |
+
+The upstream prompt defines only HIGH, MEDIUM and LOW, so this scale is part of the reviewer core's own prompt and output schema ([0001](adr/0001-reviewer-core.md)).
+
 ### PR integration
 
 A composite GitHub Action, called by the workflow the org ruleset requires.
@@ -133,9 +146,9 @@ A composite GitHub Action, called by the workflow the org ruleset requires.
 1. **Prepare:** refuse fork PRs, check out the PR head, compute the diff against the base, delete agent configuration (`.claude/`, `CLAUDE.md`, `.mcp.json`) from the checkout, and get a short-lived credential (R8, R9).
 2. **Review:** call the reviewer core.
 3. **Sync comments:** match the findings against the bot's earlier comments, post new ones, reply to and resolve the ones no longer reported, and keep one summary comment once the PR has had findings (R4, R5).
-4. **Decide the check:** fail when the review did not complete (unless fail mode is open), and fail on a HIGH finding when blocking is on (R6, R7, R14).
+4. **Decide the check:** fail when the review did not complete (unless fail mode is open), and fail on a CRITICAL or HIGH finding when blocking is on (R6, R7, R14).
 5. **Record:** write the criteria touched and the findings to the job summary, and upload `result.json` (R13).
-6. **Alert:** when the review did not complete or a step failed, post to [Adaptive Security team channel] on Slack (R18). A check that fails because of a HIGH finding does not alert, since that is the reviewer working as intended.
+6. **Alert:** when the review did not complete or a step failed, post to [Adaptive Security team channel] on Slack (R18). A check that fails because of a CRITICAL or HIGH finding does not alert, since that is the reviewer working as intended.
 
 ### Eval harness
 

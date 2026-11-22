@@ -38,7 +38,7 @@ Use all three, each for a different job:
   - Nothing reads the reactions until the aggregation in the open questions below is built.
 
   The wrapper now posts comments itself ([0005](0005-required-check-semantics.md)), so whether to add reactions, and a footer asking the author to reply when a finding is wrong, are its choices. [decide: keep the reactions, replace them with the footer, or both.] Hand labelling in shadow mode (Option C) and the bypass records ([0005](0005-required-check-semantics.md)) remain the reliable precision signals.
-- **Precision of HIGH findings** is tracked separately, because only HIGH findings block a merge ([0005](0005-required-check-semantics.md)). Phase 2 measures it before blocking turns on. Once blocking is on, every security bypass is a HIGH finding labelled wrong by a security engineer. That is the most reliable precision signal the system has.
+- **Precision of CRITICAL and HIGH findings** is tracked separately, because only they block a merge ([0005](0005-required-check-semantics.md)). Phase 2 measures it before blocking turns on. Once blocking is on, every approved false-positive request is a blocking finding labelled wrong by a member of the Adaptive Security team. That is the most reliable precision signal the system has.
 
 ## Consequences
 

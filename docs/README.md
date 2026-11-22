@@ -19,7 +19,7 @@ flowchart TD
         end
         C --> D1
         D3 --> E{"Did the review<br/>complete?"}
-        H{"Any HIGH severity<br/>finding?"}
+        H{"Any CRITICAL or HIGH<br/>finding?"}
     end
 
     E -- "no: API outage or error" --> G["Check fails<br/>(the rotation engineer can<br/>switch it to pass with a warning)"]
@@ -30,7 +30,7 @@ flowchart TD
     B2 --> J["Finding is wrong:<br/>author raises a false-positive request,<br/>the block lifts at once"]
 ```
 
-Once rollout is complete, a PR cannot merge while the review reports a HIGH severity finding, or while the review cannot run. During rollout, a review that cannot run lets the PR through with a warning. MEDIUM and LOW findings are comments only. When the author thinks a HIGH finding is wrong, they raise a false-positive request on the PR, and the Adaptive Security team decides. Raising the request releases the block at once, and the team reviews it afterwards. A dismissed finding does not come back on that PR. Blocking on HIGH findings is switched on during rollout, once the Adaptive Security team has measured how often HIGH findings are right.
+Once rollout is complete, a PR cannot merge while the review reports a CRITICAL or HIGH finding, or while the review cannot run. During rollout, a review that cannot run lets the PR through with a warning. MEDIUM and LOW findings are comments only. When the author thinks such a finding is wrong, they raise a false-positive request on the PR, and the Adaptive Security team decides. Raising the request releases the block at once, and the team reviews it afterwards. A dismissed finding does not come back on that PR. Blocking is switched on during rollout, once the Adaptive Security team has measured how often CRITICAL and HIGH findings are right.
 
 ## How the review stays good
 

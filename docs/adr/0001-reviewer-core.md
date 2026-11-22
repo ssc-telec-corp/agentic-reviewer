@@ -37,6 +37,7 @@ It then posts the survivors as inline PR comments. It fetches the PR from the Gi
 - **The false-positive filter runs.** This needs a code change (problem 1).
 - **Credentials come from workload identity federation, with no stored API key** ([0010](0010-local-vs-ci-authentication.md)). This needs a code change: the action refuses to start without `ANTHROPIC_API_KEY`, and it passes that value as an API key, which takes precedence over federation.
 - **A review that did not complete never looks like a clean one** ([0006](0006-fail-open-vs-fail-closed.md)). The wrapper can detect some cases from the action's output files, but the reliable fix is in the code (problems 2 and 3).
+- **Four severity levels, including CRITICAL** ([0005](0005-required-check-semantics.md)). The action's prompt and output define only HIGH, MEDIUM and LOW, so this needs a change to the prompt.
 - **Findings are tracked across pushes:** new findings are posted, and findings a later scan no longer reports are closed. The wrapper's own posting step can do this with the action's commenting switched off ([0005](0005-required-check-semantics.md)), so this one needs no change to the action itself.
 
 **Maintenance evidence**, from the public GitHub pages on 2026-11-22:
