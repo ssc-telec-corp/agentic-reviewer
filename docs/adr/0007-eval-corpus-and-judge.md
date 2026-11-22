@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-23
-- Related: [0001](0001-composite-action-vs-custom-service.md), [0003](0003-precedents-vs-rules.md), [0004](0004-models-and-second-reviewer.md), [0008](0008-measuring-precision.md), [0010](0010-local-vs-ci-authentication.md), [0011](0011-policy-layering.md), [0012](0012-versioned-releases.md)
+- Related: [0001](0001-reviewer-core.md), [0003](0003-precedents-vs-rules.md), [0004](0004-models-and-second-reviewer.md), [0008](0008-measuring-precision.md), [0010](0010-local-vs-ci-authentication.md), [0011](0011-policy-layering.md), [0012](0012-versioned-releases.md)
 
 ## Context
 
@@ -22,7 +22,7 @@ A reviewer can describe a real bug in different words, cite a different line, or
 ### Option B: Run upstream `main()` locally, with PR data built from git
 
 - Pro: Same prompt, Claude Code call, regex exclusions, filter and output as the action, at the same pinned SHA. The replacement for the GitHub fetch must also reproduce what that fetch does besides fetching: it drops generated files, keeps only the first 100 files, and requires `GITHUB_TOKEN` to be set. Otherwise the eval measures a different pipeline.
-- Note: this option assumes the upstream code is the reviewer core. If [0001](0001-composite-action-vs-custom-service.md) chooses a headless reviewer, the harness calls it directly with a code tree and a diff instead.
+- Note: this option assumes the upstream code is the reviewer core. If [0001](0001-reviewer-core.md) chooses a headless reviewer, the harness calls it directly with a code tree and a diff instead.
 - Con: It does not exercise the comment script or the action's shell steps. The CI PR runs cover those.
 
 ### Matching: exact vs LLM judge
@@ -46,7 +46,7 @@ The same command runs in three places, with no change to the harness:
 
 - **Locally**, for a developer changing the policy or the wrapper. One command runs the whole corpus and writes the report.
 - **On a schedule in GitHub Actions**, using the workflow `.github/workflows/adaptive-security-reviewer-eval.yml`. It runs every [Monday 06:00 UTC] and on manual dispatch. A scheduled run is needed even when nothing in this repository changed, because three things outside it change review quality:
-  - Upstream installs the latest Claude Code from npm on every run, with no version pin ([0001](0001-composite-action-vs-custom-service.md)).
+  - Upstream installs the latest Claude Code from npm on every run, with no version pin ([0001](0001-reviewer-core.md)).
   - Model behaviour behind a fixed model ID can change.
   - The filter's hard-coded validation model can be retired, which silently turns filtering off ([0010](0010-local-vs-ci-authentication.md)).
 - **In the release workflow**, as the gate before a version is tagged ([0012](0012-versioned-releases.md)).
@@ -76,7 +76,7 @@ Checks that do not call a model run on every PR to this repository in a separate
 
 ## Open questions
 
-- [decide: how cost per case is measured. The upstream action records no cost ([0001](0001-composite-action-vs-custom-service.md), problem 9), so the harness has to collect it itself, from Claude Code's reported cost plus the token counts of any filter calls.]
+- [decide: how cost per case is measured. The upstream action records no cost ([0001](0001-reviewer-core.md), problem 9), so the harness has to collect it itself, from Claude Code's reported cost plus the token counts of any filter calls.]
 
 - [decide: schedule frequency (weekly proposed) and the monthly eval budget [budget].]
 - [decide: how CI gets read access to the repositories that real cases come from.]
@@ -85,5 +85,5 @@ Checks that do not call a model run on every PR to this repository in a separate
 ## Future opportunities
 
 - Three runs per case to measure variance, once the per-case cost is known.
-- Run a headless-variant reviewer next to the upstream pipeline in the same report ([0001](0001-composite-action-vs-custom-service.md)).
+- Run a headless-variant reviewer next to the upstream pipeline in the same report ([0001](0001-reviewer-core.md)).
 - Automatic miss triage that reads the Claude Code transcript (file not read, read but not flagged), as the reference design does.

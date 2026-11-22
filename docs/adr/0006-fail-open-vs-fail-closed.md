@@ -2,11 +2,11 @@
 
 - Status: Proposed
 - Date: 2026-11-23
-- Related: [0001](0001-composite-action-vs-custom-service.md), [0004](0004-models-and-second-reviewer.md), [0005](0005-required-check-semantics.md), [0009](0009-rollout-gates.md)
+- Related: [0001](0001-reviewer-core.md), [0004](0004-models-and-second-reviewer.md), [0005](0005-required-check-semantics.md), [0009](0009-rollout-gates.md)
 
 ## Context
 
-The review depends on the Anthropic API and GitHub Actions. The upstream action fails open without saying so. When Claude Code or the API errors, the scan step logs a warning, reports zero findings, and the job passes. When the filter's validation call fails, it posts unfiltered findings ([0001](0001-composite-action-vs-custom-service.md)). Without a wrapper check, an outage looks like a clean review.
+The review depends on the Anthropic API and GitHub Actions. The upstream action fails open without saying so. When Claude Code or the API errors, the scan step logs a warning, reports zero findings, and the job passes. When the filter's validation call fails, it posts unfiltered findings ([0001](0001-reviewer-core.md)). Without a wrapper check, an outage looks like a clean review.
 
 With one vendor and no fallback model ([0004](0004-models-and-second-reviewer.md)), a full API outage stops every review in the org.
 
@@ -45,7 +45,7 @@ The workflow passes `fail-mode: ${{ vars.ASR_FAIL_MODE || 'closed' }}`. With `cl
 
 ## Known gaps
 
-The classification above misses three ways the upstream code fails silently. They are covered by whichever reviewer-core option is chosen ([0001](0001-composite-action-vs-custom-service.md)):
+The classification above misses three ways the upstream code fails silently. They are covered by whichever reviewer-core option is chosen ([0001](0001-reviewer-core.md)):
 - Output that is not the expected JSON becomes an empty, successful review (problem 2 in 0001). Check that `analysis_summary.review_completed` is `true`.
 - A finding whose filter call failed is kept unfiltered (problem 3). Check for `Claude API failed` in `_filter_metadata.justification`.
 - If the upstream step exits with an error, for example when posting comments fails, later steps are skipped. The verify and summary steps need `if: always()`.

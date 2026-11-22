@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-23
-- Related: [0001](0001-composite-action-vs-custom-service.md), [0003](0003-precedents-vs-rules.md), [0005](0005-required-check-semantics.md), [0007](0007-eval-corpus-and-judge.md), [0009](0009-rollout-gates.md)
+- Related: [0001](0001-reviewer-core.md), [0003](0003-precedents-vs-rules.md), [0005](0005-required-check-semantics.md), [0007](0007-eval-corpus-and-judge.md), [0009](0009-rollout-gates.md)
 
 ## Context
 
@@ -43,7 +43,7 @@ Use all three, each for a different job:
 ## Consequences
 
 - The POC reports only Option A numbers. Shadow-mode labelling and feedback aggregation are not built.
-- Collecting reactions across repos needs a scheduled job or the service in [0001](0001-composite-action-vs-custom-service.md) Option D.
+- Collecting reactions across repos needs a scheduled job or the service in [0001](0001-reviewer-core.md) Option D.
 
 ## Open questions
 

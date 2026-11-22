@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-23
-- Related: [0001](0001-composite-action-vs-custom-service.md), [0006](0006-fail-open-vs-fail-closed.md), [0007](0007-eval-corpus-and-judge.md), [0012](0012-versioned-releases.md)
+- Related: [0001](0001-reviewer-core.md), [0006](0006-fail-open-vs-fail-closed.md), [0007](0007-eval-corpus-and-judge.md), [0012](0012-versioned-releases.md)
 
 **In short:** every PR is reviewed by one model, `claude-opus-5-5`. We do not add a second reviewer model yet. Instead, the eval runs every test case on both Opus and Sonnet, and the results decide whether a second reviewer is worth its cost.
 
@@ -47,7 +47,7 @@ To decide on Option B with data instead of opinion, the eval runs every test cas
 
 ## Open questions
 
-- [decide: how refusals are handled. Opus 5.5 runs safety classifiers, including one for cyber topics, and a security-review prompt can trigger a refusal. The upstream code does not handle a refusal: in the scan it looks like a clean review, and in the filter the finding is kept unfiltered ([0001](0001-composite-action-vs-custom-service.md), problems 2 and 3). The eval should count refusals per stage.]
+- [decide: how refusals are handled. Opus 5.5 runs safety classifiers, including one for cyber topics, and a security-review prompt can trigger a refusal. The upstream code does not handle a refusal: in the scan it looks like a clean review, and in the filter the finding is kept unfiltered ([0001](0001-reviewer-core.md), problems 2 and 3). The eval should count refusals per stage.]
 
 - [decide: adopt Option B if the two models together find at least [X] more of the known vulnerabilities than Opus alone, while false findings on clean changes stay within the threshold in `eval/thresholds.yaml`. The synthetic test set is too small to decide this, so it needs real cases ([0007](0007-eval-corpus-and-judge.md)).]
 

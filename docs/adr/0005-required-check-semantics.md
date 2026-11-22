@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-23
-- Related: [0001](0001-composite-action-vs-custom-service.md), [0006](0006-fail-open-vs-fail-closed.md), [0008](0008-measuring-precision.md), [0009](0009-rollout-gates.md), [0011](0011-policy-layering.md)
+- Related: [0001](0001-reviewer-core.md), [0006](0006-fail-open-vs-fail-closed.md), [0008](0008-measuring-precision.md), [0009](0009-rollout-gates.md), [0011](0011-policy-layering.md)
 
 **In short:** a PR cannot merge while the review reports a HIGH severity finding. MEDIUM and LOW findings are comments only. When a HIGH finding is wrong, the security team merges the PR through a ruleset bypass, following the process below. Blocking turns on only after the rollout has measured how often HIGH findings are right.
 
@@ -69,7 +69,7 @@ The same path covers an emergency, for example a hotfix during an incident that 
 
 ## Known gaps in PR comments
 
-The upstream comment script, as observed in a test run ([0001](0001-composite-action-vs-custom-service.md)), behaves like this after the first review of a PR:
+The upstream comment script, as observed in a test run ([0001](0001-reviewer-core.md)), behaves like this after the first review of a PR:
 
 - **Fixed findings are not closed.** Comments from earlier reviews stay on the PR. The reviewer has no memory of them, so it does not reply that a finding is fixed or resolve the thread. GitHub marks a comment "Outdated" only when the exact line it points at changes, so a fixed finding can still look current.
 - **A clean re-review is silent.** Nothing on the PR says that a later review found nothing. The only record is the results artifact and the job summary.

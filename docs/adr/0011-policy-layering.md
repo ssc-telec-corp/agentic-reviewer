@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-23
-- Related: [0001](0001-composite-action-vs-custom-service.md), [0002](0002-classifier-vs-single-policy.md), [0003](0003-precedents-vs-rules.md), [0005](0005-required-check-semantics.md), [0007](0007-eval-corpus-and-judge.md), [0012](0012-versioned-releases.md)
+- Related: [0001](0001-reviewer-core.md), [0002](0002-classifier-vs-single-policy.md), [0003](0003-precedents-vs-rules.md), [0005](0005-required-check-semantics.md), [0007](0007-eval-corpus-and-judge.md), [0012](0012-versioned-releases.md)
 
 **In short:** for now, the review uses only the default rules that ship with `claude-code-security-review`, plus the list of SIA criteria. Org precedents exist as switched-off drafts in `policy/base/`. Repository overlays, kept in this repository and owned by [security-team], are designed below but not built. Both get filled in after the project moves to [org].
 
@@ -40,7 +40,7 @@ Option A.
 
 - The wrapper passes only scan instructions. They contain the nine SIA criteria from `policy/base/criteria/*.yaml` (id, name, what each covers) and the instruction to set each finding's `category` to a criterion id ([0002](0002-classifier-vs-single-policy.md)).
 - It passes no filtering file, so upstream's filter uses its default rules unchanged.
-- The reference rule set is the slash command's. Whichever reviewer core [0001](0001-composite-action-vs-custom-service.md) chooses should use its text, so that every option is measured against the same rules. Option D uses the command file directly. With Option C, the action's prompt and filter text would be replaced by the command file's.
+- The reference rule set is the slash command's. Whichever reviewer core [0001](0001-reviewer-core.md) chooses should use its text, so that every option is measured against the same rules. Option D uses the command file directly. With Option C, the action's prompt and filter text would be replaced by the command file's.
 - The precedents in `policy/base/` are drafts and are not loaded while `precedents_enabled: false` is set in `policy/base/global.yaml`. `policy/examples/repo-overlay.yaml` shows the overlay format and is not loaded either.
 
 ## Plan for when the policy is filled in

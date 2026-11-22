@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-23
-- Related: [0001](0001-composite-action-vs-custom-service.md), [0003](0003-precedents-vs-rules.md), [0011](0011-policy-layering.md)
+- Related: [0001](0001-reviewer-core.md), [0003](0003-precedents-vs-rules.md), [0011](0011-policy-layering.md)
 
 ## Context
 

@@ -2,7 +2,7 @@
 
 - Status: Proposed
 - Date: 2026-11-23
-- Related: [0001](0001-composite-action-vs-custom-service.md), [0002](0002-classifier-vs-single-policy.md), [0007](0007-eval-corpus-and-judge.md), [0008](0008-measuring-precision.md), [0011](0011-policy-layering.md)
+- Related: [0001](0001-reviewer-core.md), [0002](0002-classifier-vs-single-policy.md), [0007](0007-eval-corpus-and-judge.md), [0008](0008-measuring-precision.md), [0011](0011-policy-layering.md)
 
 ## Context
 
@@ -34,7 +34,7 @@ Precedents describe architecture and recurring decisions, not individual eval ca
 
 Our precedents add to upstream's defaults and never repeat or contradict them, because upstream's defaults come first and win ([0011](0011-policy-layering.md)). Before a precedent is added, its author checks it against upstream's default text. For now no precedents are loaded, and the review runs on upstream's defaults alone ([0011](0011-policy-layering.md)).
 
-The upstream regex exclusions stay active. Turning them off would require a fork ([0001](0001-composite-action-vs-custom-service.md)).
+The upstream regex exclusions stay active. Turning them off would require a fork ([0001](0001-reviewer-core.md)).
 
 ## Consequences
 
